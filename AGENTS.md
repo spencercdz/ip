@@ -9,8 +9,8 @@ Unless the user says otherwise, assume that you are assisting a student working 
 # Student profile
 
 * Prior knowledge: Basic Java and OOP concepts.
-* Level of programming experience: [to be filled]
-* IDE and level of expertise: [to be filled]
+* Level of programming experience: Experienced. Has built larger projects beyond coursework, so explanations can assume general programming fluency and focus on Java-specific or course-specific details.
+* IDE and level of expertise: Cursor (a VS Code-based editor), comfortable with it. IntelliJ IDEA is not in use, so prefer terminal and Gradle commands over IntelliJ-specific instructions.
 
 # Guidance for interacting with users
 
