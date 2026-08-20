@@ -1,11 +1,17 @@
+import java.util.Scanner;
+
 /**
  * Entry point of the Jaku chatbot.
  * <p>
- * At this stage Jaku only greets the user and exits immediately.
+ * Jaku greets the user, echoes back every line the user types, and says
+ * goodbye when the user enters the {@code bye} command.
  */
 public class Jaku {
     /** Name the chatbot introduces itself with. */
     private static final String NAME = "Jaku";
+
+    /** Command the user types to end the conversation. */
+    private static final String BYE_COMMAND = "bye";
 
     /** Horizontal line used to separate the chatbot's replies from the user's input. */
     private static final String DIVIDER = "____________________________________________________________";
@@ -19,6 +25,7 @@ public class Jaku {
 
     public static void main(String[] args) {
         greet();
+        echoUntilBye();
         exit();
     }
 
@@ -28,8 +35,42 @@ public class Jaku {
     private static void greet() {
         System.out.println(DIVIDER);
         System.out.println(BANNER);
-        System.out.println("Hello! I'm " + NAME + ".");
-        System.out.println("What can I do for you?");
+        System.out.println("Hello there! I'm " + NAME + ".");
+        System.out.println("How can I help you today?");
+        System.out.println(DIVIDER);
+    }
+
+    /**
+     * Reads the user's input line by line and echoes each line back.
+     * <p>
+     * Stops when the user enters the {@code bye} command, or when the input
+     * runs out (for example when input is piped in from a file). Blank lines
+     * are ignored, so that pressing Enter alone does not produce an empty
+     * reply.
+     */
+    private static void echoUntilBye() {
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (scanner.hasNextLine()) {
+                String input = scanner.nextLine().trim();
+                if (input.equalsIgnoreCase(BYE_COMMAND)) {
+                    return;
+                }
+                if (input.isEmpty()) {
+                    continue;
+                }
+                echo(input);
+            }
+        }
+    }
+
+    /**
+     * Prints a single reply from Jaku, framed by divider lines.
+     *
+     * @param message the text to show to the user
+     */
+    private static void echo(String message) {
+        System.out.println(DIVIDER);
+        System.out.println(message);
         System.out.println(DIVIDER);
     }
 
@@ -37,7 +78,7 @@ public class Jaku {
      * Prints the farewell message shown before Jaku shuts down.
      */
     private static void exit() {
-        System.out.println("Bye. Hope to see you again soon!");
+        System.out.println("Bye for now. Hope to see you again soon!");
         System.out.println(DIVIDER);
     }
 }
