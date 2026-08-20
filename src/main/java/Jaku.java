@@ -149,7 +149,7 @@ public class Jaku {
      */
     private void addTodo(String input) {
         String description = input.substring(TODO_COMMAND.length()).trim();
-        addTask(new Task(description, "T", ""));
+        addTask(new Todo(description));
     }
 
     /**
@@ -162,7 +162,7 @@ public class Jaku {
         int separatorIndex = arguments.indexOf(BY_SEPARATOR);
         String description = arguments.substring(0, separatorIndex);
         String by = arguments.substring(separatorIndex + BY_SEPARATOR.length());
-        addTask(new Task(description, "D", " (by: " + by + ")"));
+        addTask(new Deadline(description, by));
     }
 
     /**
@@ -177,7 +177,7 @@ public class Jaku {
         String description = arguments.substring(0, fromIndex);
         String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), toIndex);
         String to = arguments.substring(toIndex + TO_SEPARATOR.length());
-        addTask(new Task(description, "E", " (from: " + from + " to: " + to + ")"));
+        addTask(new Event(description, from, to));
     }
 
     /**
