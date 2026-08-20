@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 
 /**
@@ -19,6 +20,12 @@ public class Jaku {
     /** Command the user types to see everything added so far. */
     private static final String LIST_COMMAND = "list";
 
+    /** Command the user types to mark a task as done. */
+    private static final String MARK_COMMAND = "mark";
+
+    /** Command the user types to mark a task as not done. */
+    private static final String UNMARK_COMMAND = "unmark";
+
     /** Horizontal line used to separate the chatbot's replies from the user's input. */
     private static final String DIVIDER = "____________________________________________________________";
 
@@ -29,9 +36,14 @@ public class Jaku {
             + "| |_| | / ___ \\ | . \\ | |_| |\n"
             + " \\___/ /_/   \\_\\|_|\\_\\ \\___/ ";
 
-    /** Items the user has added, in the order they were added. */
-    private final List<String> tasks = new ArrayList<>();
+    /** Tasks the user has added, in the order they were added. */
+    private final List<Task> tasks = new ArrayList<>();
 
+    /**
+     * Starts a new Jaku chat session.
+     *
+     * @param args command-line arguments, which Jaku does not use
+     */
     public static void main(String[] args) {
         new Jaku().run();
     }
@@ -80,14 +92,18 @@ public class Jaku {
     }
 
     /**
-     * Carries out a single command from the user. Any input other than
-     * {@code list} is taken to be a new item to remember.
+     * Carries out a single command from the user. Input that is not a supported
+     * command is taken to be a new task to remember.
      *
      * @param input the trimmed, non-empty line the user entered
      */
     private void handleCommand(String input) {
         if (input.equalsIgnoreCase(LIST_COMMAND)) {
             showTasks();
+        } else if (input.toLowerCase(Locale.ROOT).startsWith(MARK_COMMAND + " ")) {
+            markTask(input);
+        } else if (input.toLowerCase(Locale.ROOT).startsWith(UNMARK_COMMAND + " ")) {
+            unmarkTask(input);
         } else {
             addTask(input);
         }
@@ -99,8 +115,38 @@ public class Jaku {
      * @param description the text of the item to remember
      */
     private void addTask(String description) {
-        tasks.add(description);
+        tasks.add(new Task(description));
         reply("added: " + description);
+    }
+
+    /**
+     * Marks the task selected by a one-based task number as done.
+     *
+     * @param input a mark command followed by a valid task number
+     */
+    private void markTask(String input) {
+        int taskIndex = Integer.parseInt(input.substring(MARK_COMMAND.length()).trim()) - 1;
+        Task task = tasks.get(taskIndex);
+        task.markAsDone();
+        reply(List.of(
+                "Nice! I've marked this task as done:",
+                "  " + task
+        ));
+    }
+
+    /**
+     * Marks the task selected by a one-based task number as not done.
+     *
+     * @param input an unmark command followed by a valid task number
+     */
+    private void unmarkTask(String input) {
+        int taskIndex = Integer.parseInt(input.substring(UNMARK_COMMAND.length()).trim()) - 1;
+        Task task = tasks.get(taskIndex);
+        task.markAsNotDone();
+        reply(List.of(
+                "OK, I've marked this task as not done yet:",
+                "  " + task
+        ));
     }
 
     /**
@@ -113,7 +159,7 @@ public class Jaku {
         }
         List<String> lines = new ArrayList<>();
         for (int i = 0; i < tasks.size(); i++) {
-            lines.add((i + 1) + ". " + tasks.get(i));
+            lines.add((i + 1) + "." + tasks.get(i));
         }
         reply(lines);
     }
