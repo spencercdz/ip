@@ -171,3 +171,159 @@ ____________________________________________________________
 Bye for now. Hope to see you again soon!
 ____________________________________________________________
 ```
+
+## L5-2 Reject malformed deadlines and events
+
+Aim: Interleave invalid and valid timed tasks while verifying rejected inputs do not change task state.
+
+### Input
+
+```text
+deadline
+deadline /by Sunday
+deadline write report
+deadline write report /by
+deadline write report /by Friday
+event
+event /from Monday /to Tuesday
+event project meeting
+event project meeting /from /to Tuesday
+event project meeting /from Monday /to
+event project meeting /from Monday /to Tuesday
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Use: deadline <description> /by <date or time>.
+____________________________________________________________
+____________________________________________________________
+Use: deadline <description> /by <date or time>.
+____________________________________________________________
+____________________________________________________________
+Use: deadline <description> /by <date or time>.
+____________________________________________________________
+____________________________________________________________
+Use: deadline <description> /by <date or time>.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [D][ ] write report (by: Friday)
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [E][ ] project meeting (from: Monday to: Tuesday)
+Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[D][ ] write report (by: Friday)
+2.[E][ ] project meeting (from: Monday to: Tuesday)
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## L5-3 Reject invalid task numbers and command shapes
+
+Aim: Verify task-number errors and unsupported extra arguments without corrupting task status or ending the session.
+
+### Input
+
+```text
+mark
+unmark nope
+mark 0
+todo only task
+mark 2
+mark 1
+unmark -1
+unmark 1
+list now
+bye now
+
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Use: mark <task number>.
+____________________________________________________________
+____________________________________________________________
+Use: unmark <task number>.
+____________________________________________________________
+____________________________________________________________
+Task number 0 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] only task
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Task number 2 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Nice! I've marked this task as done:
+  [T][X] only task
+____________________________________________________________
+____________________________________________________________
+Task number -1 is not in the list.
+____________________________________________________________
+____________________________________________________________
+OK, I've marked this task as not done yet:
+  [T][ ] only task
+____________________________________________________________
+____________________________________________________________
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
+____________________________________________________________
+____________________________________________________________
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[T][ ] only task
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```

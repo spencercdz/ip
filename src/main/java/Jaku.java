@@ -35,14 +35,14 @@ public class Jaku {
     /** Command the user types to add a task with a start and end time. */
     private static final String EVENT_COMMAND = "event";
 
-    /** Separator between a deadline's description and its due date or time. */
-    private static final String BY_SEPARATOR = " /by ";
+    /** Marker between a deadline's description and its due date or time. */
+    private static final String BY_SEPARATOR = "/by";
 
-    /** Separator between an event's description and its start date or time. */
-    private static final String FROM_SEPARATOR = " /from ";
+    /** Marker between an event's description and its start date or time. */
+    private static final String FROM_SEPARATOR = "/from";
 
-    /** Separator between an event's start and end dates or times. */
-    private static final String TO_SEPARATOR = " /to ";
+    /** Marker between an event's start and end dates or times. */
+    private static final String TO_SEPARATOR = "/to";
 
     /** Horizontal line used to separate the chatbot's replies from the user's input. */
     private static final String DIVIDER = "____________________________________________________________";
@@ -122,15 +122,15 @@ public class Jaku {
     private void handleCommand(String input) throws JakuException {
         if (input.equalsIgnoreCase(LIST_COMMAND)) {
             showTasks();
-        } else if (startsWithCommand(input, MARK_COMMAND)) {
+        } else if (matchesCommand(input, MARK_COMMAND)) {
             markTask(input);
-        } else if (startsWithCommand(input, UNMARK_COMMAND)) {
+        } else if (matchesCommand(input, UNMARK_COMMAND)) {
             unmarkTask(input);
         } else if (matchesCommand(input, TODO_COMMAND)) {
             addTodo(input);
-        } else if (startsWithCommand(input, DEADLINE_COMMAND)) {
+        } else if (matchesCommand(input, DEADLINE_COMMAND)) {
             addDeadline(input);
-        } else if (startsWithCommand(input, EVENT_COMMAND)) {
+        } else if (matchesCommand(input, EVENT_COMMAND)) {
             addEvent(input);
         } else {
             throw new JakuException(
@@ -179,12 +179,19 @@ public class Jaku {
      * Creates a deadline from its command and adds it to the task list.
      *
      * @param input a deadline command containing a description and {@code /by} value
+     * @throws JakuException if the description, separator, or due text is missing
      */
-    private void addDeadline(String input) {
+    private void addDeadline(String input) throws JakuException {
         String arguments = input.substring(DEADLINE_COMMAND.length()).trim();
         int separatorIndex = arguments.indexOf(BY_SEPARATOR);
-        String description = arguments.substring(0, separatorIndex);
-        String by = arguments.substring(separatorIndex + BY_SEPARATOR.length());
+        if (separatorIndex < 0) {
+            throw new JakuException("Use: deadline <description> /by <date or time>.");
+        }
+        String description = arguments.substring(0, separatorIndex).trim();
+        String by = arguments.substring(separatorIndex + BY_SEPARATOR.length()).trim();
+        if (description.isEmpty() || by.isEmpty()) {
+            throw new JakuException("Use: deadline <description> /by <date or time>.");
+        }
         addTask(new Deadline(description, by));
     }
 
@@ -192,14 +199,24 @@ public class Jaku {
      * Creates an event from its command and adds it to the task list.
      *
      * @param input an event command containing a description, {@code /from}, and {@code /to} values
+     * @throws JakuException if the description, separators, start text, or end text is missing
      */
-    private void addEvent(String input) {
+    private void addEvent(String input) throws JakuException {
         String arguments = input.substring(EVENT_COMMAND.length()).trim();
         int fromIndex = arguments.indexOf(FROM_SEPARATOR);
+        if (fromIndex < 0) {
+            throw new JakuException("Use: event <description> /from <start> /to <end>.");
+        }
         int toIndex = arguments.indexOf(TO_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
-        String description = arguments.substring(0, fromIndex);
-        String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), toIndex);
-        String to = arguments.substring(toIndex + TO_SEPARATOR.length());
+        if (toIndex < 0) {
+            throw new JakuException("Use: event <description> /from <start> /to <end>.");
+        }
+        String description = arguments.substring(0, fromIndex).trim();
+        String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), toIndex).trim();
+        String to = arguments.substring(toIndex + TO_SEPARATOR.length()).trim();
+        if (description.isEmpty() || from.isEmpty() || to.isEmpty()) {
+            throw new JakuException("Use: event <description> /from <start> /to <end>.");
+        }
         addTask(new Event(description, from, to));
     }
 
@@ -220,10 +237,11 @@ public class Jaku {
     /**
      * Marks the task selected by a one-based task number as done.
      *
-     * @param input a mark command followed by a valid task number
+     * @param input a mark command followed by a task number
+     * @throws JakuException if the task number is missing, invalid, or outside the list
      */
-    private void markTask(String input) {
-        int taskIndex = Integer.parseInt(input.substring(MARK_COMMAND.length()).trim()) - 1;
+    private void markTask(String input) throws JakuException {
+        int taskIndex = parseTaskIndex(input, MARK_COMMAND);
         Task task = tasks.get(taskIndex);
         task.markAsDone();
         reply(List.of(
@@ -235,16 +253,39 @@ public class Jaku {
     /**
      * Marks the task selected by a one-based task number as not done.
      *
-     * @param input an unmark command followed by a valid task number
+     * @param input an unmark command followed by a task number
+     * @throws JakuException if the task number is missing, invalid, or outside the list
      */
-    private void unmarkTask(String input) {
-        int taskIndex = Integer.parseInt(input.substring(UNMARK_COMMAND.length()).trim()) - 1;
+    private void unmarkTask(String input) throws JakuException {
+        int taskIndex = parseTaskIndex(input, UNMARK_COMMAND);
         Task task = tasks.get(taskIndex);
         task.markAsNotDone();
         reply(List.of(
                 "OK, I've marked this task as not done yet:",
                 "  " + task
         ));
+    }
+
+    /**
+     * Parses and validates the one-based task number supplied to a task command.
+     *
+     * @param input the complete user input
+     * @param command the command whose task number should be parsed
+     * @return the corresponding zero-based task-list index
+     * @throws JakuException if the number is missing, nonnumeric, or outside the list
+     */
+    private int parseTaskIndex(String input, String command) throws JakuException {
+        String taskNumberText = input.substring(command.length()).trim();
+        int taskNumber;
+        try {
+            taskNumber = Integer.parseInt(taskNumberText);
+        } catch (NumberFormatException exception) {
+            throw new JakuException("Use: " + command + " <task number>.");
+        }
+        if (taskNumber < 1 || taskNumber > tasks.size()) {
+            throw new JakuException("Task number " + taskNumber + " is not in the list.");
+        }
+        return taskNumber - 1;
     }
 
     /**
