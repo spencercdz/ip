@@ -162,7 +162,7 @@ Got it. I've added this task:
 Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
@@ -315,14 +315,153 @@ OK, I've marked this task as not done yet:
   [T][ ] only task
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
 1.[T][ ] only task
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## L6-1 Delete a typed task and renumber the list
+
+Aim: Verify case-insensitive deletion, removed-task formatting, remaining count, and automatic renumbering.
+
+### Input
+
+```text
+todo read book
+deadline return book /by June 6th
+event project meeting /from Aug 6th 2pm /to 4pm
+todo join sports club
+mark 1
+mark 2
+DELETE 3
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] read book
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [D][ ] return book (by: June 6th)
+Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] join sports club
+Now you have 4 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Nice! I've marked this task as done:
+  [T][X] read book
+____________________________________________________________
+____________________________________________________________
+Nice! I've marked this task as done:
+  [D][X] return book (by: June 6th)
+____________________________________________________________
+____________________________________________________________
+Noted. I've removed this task:
+  [E][ ] project meeting (from: Aug 6th 2pm to: 4pm)
+Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[T][X] read book
+2.[D][X] return book (by: June 6th)
+3.[T][ ] join sports club
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## L6-2 Reject invalid deletions and empty the list
+
+Aim: Interleave invalid and valid deletions while verifying state remains correct and an empty list is handled.
+
+### Input
+
+```text
+delete
+delete nope
+delete 0
+todo only task
+delete 2
+delete -1
+delete 1
+delete 1
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Use: delete <task number>.
+____________________________________________________________
+____________________________________________________________
+Use: delete <task number>.
+____________________________________________________________
+____________________________________________________________
+Task number 0 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] only task
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Task number 2 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Task number -1 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Noted. I've removed this task:
+  [T][ ] only task
+Now you have 0 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Task number 1 is not in the list.
+____________________________________________________________
+____________________________________________________________
+Your list is empty for now.
 ____________________________________________________________
 Bye for now. Hope to see you again soon!
 ____________________________________________________________

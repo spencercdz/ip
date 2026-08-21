@@ -35,6 +35,9 @@ public class Jaku {
     /** Command the user types to add a task with a start and end time. */
     private static final String EVENT_COMMAND = "event";
 
+    /** Command the user types to remove a task from the list. */
+    private static final String DELETE_COMMAND = "delete";
+
     /** Marker between a deadline's description and its due date or time. */
     private static final String BY_SEPARATOR = "/by";
 
@@ -132,9 +135,11 @@ public class Jaku {
             addDeadline(input);
         } else if (matchesCommand(input, EVENT_COMMAND)) {
             addEvent(input);
+        } else if (matchesCommand(input, DELETE_COMMAND)) {
+            deleteTask(input);
         } else {
             throw new JakuException(
-                    "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye."
+                    "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye."
             );
         }
     }
@@ -263,6 +268,22 @@ public class Jaku {
         reply(List.of(
                 "OK, I've marked this task as not done yet:",
                 "  " + task
+        ));
+    }
+
+    /**
+     * Removes the task selected by a one-based task number.
+     *
+     * @param input a delete command followed by a task number
+     * @throws JakuException if the task number is missing, invalid, or outside the list
+     */
+    private void deleteTask(String input) throws JakuException {
+        int taskIndex = parseTaskIndex(input, DELETE_COMMAND);
+        Task removedTask = tasks.remove(taskIndex);
+        reply(List.of(
+                "Noted. I've removed this task:",
+                "  " + removedTask,
+                "Now you have " + tasks.size() + " tasks in the list."
         ));
     }
 
