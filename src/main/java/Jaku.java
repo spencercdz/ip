@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 
 /**
@@ -13,30 +12,6 @@ import java.util.Scanner;
 public class Jaku {
     /** Name the chatbot introduces itself with. */
     private static final String NAME = "Jaku";
-
-    /** Command the user types to end the conversation. */
-    private static final String BYE_COMMAND = "bye";
-
-    /** Command the user types to see everything added so far. */
-    private static final String LIST_COMMAND = "list";
-
-    /** Command the user types to mark a task as done. */
-    private static final String MARK_COMMAND = "mark";
-
-    /** Command the user types to mark a task as not done. */
-    private static final String UNMARK_COMMAND = "unmark";
-
-    /** Command the user types to add a task without an attached date or time. */
-    private static final String TODO_COMMAND = "todo";
-
-    /** Command the user types to add a task that must be completed by a given time. */
-    private static final String DEADLINE_COMMAND = "deadline";
-
-    /** Command the user types to add a task with a start and end time. */
-    private static final String EVENT_COMMAND = "event";
-
-    /** Command the user types to remove a task from the list. */
-    private static final String DELETE_COMMAND = "delete";
 
     /** Marker between a deadline's description and its due date or time. */
     private static final String BY_SEPARATOR = "/by";
@@ -101,14 +76,15 @@ public class Jaku {
         try (Scanner scanner = new Scanner(System.in)) {
             while (scanner.hasNextLine()) {
                 String input = scanner.nextLine().trim();
-                if (input.equalsIgnoreCase(BYE_COMMAND)) {
-                    return;
-                }
                 if (input.isEmpty()) {
                     continue;
                 }
+                Command command = Command.fromInput(input);
+                if (command == Command.BYE && command.getArguments(input).isEmpty()) {
+                    return;
+                }
                 try {
-                    handleCommand(input);
+                    handleCommand(command, input);
                 } catch (JakuException exception) {
                     reply(exception.getMessage());
                 }
@@ -119,51 +95,53 @@ public class Jaku {
     /**
      * Carries out a single command from the user.
      *
+     * @param command the recognized command type
      * @param input the trimmed, non-empty line the user entered
      * @throws JakuException if the command is not recognized or its arguments are invalid
      */
-    private void handleCommand(String input) throws JakuException {
-        if (input.equalsIgnoreCase(LIST_COMMAND)) {
+    private void handleCommand(Command command, String input) throws JakuException {
+        switch (command) {
+        case LIST:
+            if (!command.getArguments(input).isEmpty()) {
+                throw unknownCommandException();
+            }
             showTasks();
-        } else if (matchesCommand(input, MARK_COMMAND)) {
+            break;
+        case MARK:
             markTask(input);
-        } else if (matchesCommand(input, UNMARK_COMMAND)) {
+            break;
+        case UNMARK:
             unmarkTask(input);
-        } else if (matchesCommand(input, TODO_COMMAND)) {
+            break;
+        case TODO:
             addTodo(input);
-        } else if (matchesCommand(input, DEADLINE_COMMAND)) {
+            break;
+        case DEADLINE:
             addDeadline(input);
-        } else if (matchesCommand(input, EVENT_COMMAND)) {
+            break;
+        case EVENT:
             addEvent(input);
-        } else if (matchesCommand(input, DELETE_COMMAND)) {
+            break;
+        case DELETE:
             deleteTask(input);
-        } else {
-            throw new JakuException(
-                    "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye."
-            );
+            break;
+        case BYE:
+        case UNKNOWN:
+            throw unknownCommandException();
+        default:
+            throw new AssertionError("Unhandled command: " + command);
         }
     }
 
     /**
-     * Returns whether the input is the command itself or begins with the command and a space.
+     * Creates the error shown when no supported command matches the user's input.
      *
-     * @param input the complete user input
-     * @param command the command word to match
-     * @return true when the command matches, ignoring letter case
+     * @return an exception containing the supported-command guidance
      */
-    private boolean matchesCommand(String input, String command) {
-        return input.equalsIgnoreCase(command) || startsWithCommand(input, command);
-    }
-
-    /**
-     * Returns whether the input begins with the given command and a separating space.
-     *
-     * @param input the complete user input
-     * @param command the command word to match
-     * @return true when the input starts with the command, ignoring letter case
-     */
-    private boolean startsWithCommand(String input, String command) {
-        return input.toLowerCase(Locale.ROOT).startsWith(command + " ");
+    private JakuException unknownCommandException() {
+        return new JakuException(
+                "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye."
+        );
     }
 
     /**
@@ -173,7 +151,7 @@ public class Jaku {
      * @throws JakuException if the todo description is empty
      */
     private void addTodo(String input) throws JakuException {
-        String description = input.substring(TODO_COMMAND.length()).trim();
+        String description = Command.TODO.getArguments(input);
         if (description.isEmpty()) {
             throw new JakuException("I need a description after \"todo\".");
         }
@@ -187,7 +165,7 @@ public class Jaku {
      * @throws JakuException if the description, separator, or due text is missing
      */
     private void addDeadline(String input) throws JakuException {
-        String arguments = input.substring(DEADLINE_COMMAND.length()).trim();
+        String arguments = Command.DEADLINE.getArguments(input);
         int separatorIndex = arguments.indexOf(BY_SEPARATOR);
         if (separatorIndex < 0) {
             throw new JakuException("Use: deadline <description> /by <date or time>.");
@@ -207,7 +185,7 @@ public class Jaku {
      * @throws JakuException if the description, separators, start text, or end text is missing
      */
     private void addEvent(String input) throws JakuException {
-        String arguments = input.substring(EVENT_COMMAND.length()).trim();
+        String arguments = Command.EVENT.getArguments(input);
         int fromIndex = arguments.indexOf(FROM_SEPARATOR);
         if (fromIndex < 0) {
             throw new JakuException("Use: event <description> /from <start> /to <end>.");
@@ -246,7 +224,7 @@ public class Jaku {
      * @throws JakuException if the task number is missing, invalid, or outside the list
      */
     private void markTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, MARK_COMMAND);
+        int taskIndex = parseTaskIndex(input, Command.MARK);
         Task task = tasks.get(taskIndex);
         task.markAsDone();
         reply(List.of(
@@ -262,7 +240,7 @@ public class Jaku {
      * @throws JakuException if the task number is missing, invalid, or outside the list
      */
     private void unmarkTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, UNMARK_COMMAND);
+        int taskIndex = parseTaskIndex(input, Command.UNMARK);
         Task task = tasks.get(taskIndex);
         task.markAsNotDone();
         reply(List.of(
@@ -278,7 +256,7 @@ public class Jaku {
      * @throws JakuException if the task number is missing, invalid, or outside the list
      */
     private void deleteTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, DELETE_COMMAND);
+        int taskIndex = parseTaskIndex(input, Command.DELETE);
         Task removedTask = tasks.remove(taskIndex);
         reply(List.of(
                 "Noted. I've removed this task:",
@@ -295,13 +273,13 @@ public class Jaku {
      * @return the corresponding zero-based task-list index
      * @throws JakuException if the number is missing, nonnumeric, or outside the list
      */
-    private int parseTaskIndex(String input, String command) throws JakuException {
-        String taskNumberText = input.substring(command.length()).trim();
+    private int parseTaskIndex(String input, Command command) throws JakuException {
+        String taskNumberText = command.getArguments(input);
         int taskNumber;
         try {
             taskNumber = Integer.parseInt(taskNumberText);
         } catch (NumberFormatException exception) {
-            throw new JakuException("Use: " + command + " <task number>.");
+            throw new JakuException("Use: " + command.getKeyword() + " <task number>.");
         }
         if (taskNumber < 1 || taskNumber > tasks.size()) {
             throw new JakuException("Task number " + taskNumber + " is not in the list.");
