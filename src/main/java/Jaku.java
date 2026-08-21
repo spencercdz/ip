@@ -104,31 +104,50 @@ public class Jaku {
                 if (input.isEmpty()) {
                     continue;
                 }
-                handleCommand(input);
+                try {
+                    handleCommand(input);
+                } catch (JakuException exception) {
+                    reply(exception.getMessage());
+                }
             }
         }
     }
 
     /**
-     * Carries out a single command from the user. Input that is not a supported
-     * command is taken to be a new task to remember.
+     * Carries out a single command from the user.
      *
      * @param input the trimmed, non-empty line the user entered
+     * @throws JakuException if the command is not recognized or its arguments are invalid
      */
-    private void handleCommand(String input) {
+    private void handleCommand(String input) throws JakuException {
         if (input.equalsIgnoreCase(LIST_COMMAND)) {
             showTasks();
         } else if (startsWithCommand(input, MARK_COMMAND)) {
             markTask(input);
         } else if (startsWithCommand(input, UNMARK_COMMAND)) {
             unmarkTask(input);
-        } else if (startsWithCommand(input, TODO_COMMAND)) {
+        } else if (matchesCommand(input, TODO_COMMAND)) {
             addTodo(input);
         } else if (startsWithCommand(input, DEADLINE_COMMAND)) {
             addDeadline(input);
         } else if (startsWithCommand(input, EVENT_COMMAND)) {
             addEvent(input);
+        } else {
+            throw new JakuException(
+                    "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye."
+            );
         }
+    }
+
+    /**
+     * Returns whether the input is the command itself or begins with the command and a space.
+     *
+     * @param input the complete user input
+     * @param command the command word to match
+     * @return true when the command matches, ignoring letter case
+     */
+    private boolean matchesCommand(String input, String command) {
+        return input.equalsIgnoreCase(command) || startsWithCommand(input, command);
     }
 
     /**
@@ -146,9 +165,13 @@ public class Jaku {
      * Creates a todo from its command and adds it to the task list.
      *
      * @param input a todo command followed by a description
+     * @throws JakuException if the todo description is empty
      */
-    private void addTodo(String input) {
+    private void addTodo(String input) throws JakuException {
         String description = input.substring(TODO_COMMAND.length()).trim();
+        if (description.isEmpty()) {
+            throw new JakuException("I need a description after \"todo\".");
+        }
         addTask(new Todo(description));
     }
 

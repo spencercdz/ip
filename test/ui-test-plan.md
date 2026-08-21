@@ -126,14 +126,15 @@ Bye for now. Hope to see you again soon!
 ____________________________________________________________
 ```
 
-## L4-3 Ignore unsupported and blank input
+## L5-1 Handle empty todos and unknown commands
 
-Aim: Verify that only typed task commands create tasks before Level 5 adds error messages.
+Aim: Verify minimum Level 5 errors, case-insensitive commands, unchanged state, and continued interaction.
 
 ### Input
 
 ```text
-todo kept task
+todo
+ToDo kept task
 read book
 
 list
@@ -153,9 +154,15 @@ Hello there! I'm Jaku.
 How can I help you today?
 ____________________________________________________________
 ____________________________________________________________
+I need a description after "todo".
+____________________________________________________________
+____________________________________________________________
 Got it. I've added this task:
   [T][ ] kept task
 Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
