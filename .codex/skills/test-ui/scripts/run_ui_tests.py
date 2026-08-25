@@ -106,10 +106,10 @@ def compile_sources(project_root: Path, classes_directory: Path) -> None:
         raise RuntimeError(f"Compilation failed:\n{details}")
 
 
-def run_case(project_root: Path, classes_directory: Path, case: TestCase) -> str:
+def run_case(project_root: Path, classes_directory: Path, data_file: Path, case: TestCase) -> str:
     """Run one fresh Jaku session and return its standard output."""
     result = subprocess.run(
-        ["java", "-cp", str(classes_directory), "Jaku"],
+        ["java", f"-Djaku.dataFile={data_file}", "-cp", str(classes_directory), "Jaku"],
         cwd=project_root,
         input=case.user_input + "\n",
         capture_output=True,
@@ -154,8 +154,9 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="jaku-ui-tests-") as temp_directory:
             classes_directory = Path(temp_directory)
             compile_sources(project_root, classes_directory)
-            for case in test_cases:
-                actual_output = run_case(project_root, classes_directory, case)
+            for case_number, case in enumerate(test_cases, start=1):
+                data_file = classes_directory / f"case-{case_number}" / "jaku.txt"
+                actual_output = run_case(project_root, classes_directory, data_file, case)
                 print_transcript(case, actual_output)
                 expected_output = decode_expected_output(case.expected_output)
                 if actual_output != expected_output:
