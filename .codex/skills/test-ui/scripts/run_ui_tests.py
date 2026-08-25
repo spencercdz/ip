@@ -17,6 +17,9 @@ CASE_PATTERN = re.compile(
     r"Aim: (?P<aim>[^\n]+)\n\n"
     r"### Input\n\n```text\n(?P<input>.*?)\n```\n\n"
     r"### Expected output\n\n```text\n(?P<expected>.*?)\n```"
+    r"(?:\n\n### Initial data\n\n```text\n(?P<initial_data>.*?)\n```)?"
+    r"(?:\n\n### Expected saved data\n\n```text\n(?P<expected_data>.*?)\n```)?"
+    r"(?:\n\n### Data path kind\n\n(?P<data_path_kind>file|directory))?"
     r"(?=\n\n## |\s*\Z)",
     re.MULTILINE | re.DOTALL,
 )
@@ -30,6 +33,9 @@ class TestCase:
     aim: str
     user_input: str
     expected_output: str
+    initial_data: str | None
+    expected_data: str | None
+    data_path_kind: str | None
 
 
 def find_project_root() -> Path:
@@ -50,6 +56,9 @@ def parse_test_plan(plan_path: Path) -> list[TestCase]:
             match.group("aim"),
             match.group("input"),
             match.group("expected"),
+            match.group("initial_data"),
+            match.group("expected_data"),
+            match.group("data_path_kind"),
         )
         for match in CASE_PATTERN.finditer(plan_text)
     ]
@@ -106,10 +115,10 @@ def compile_sources(project_root: Path, classes_directory: Path) -> None:
         raise RuntimeError(f"Compilation failed:\n{details}")
 
 
-def run_case(project_root: Path, classes_directory: Path, case: TestCase) -> str:
+def run_case(project_root: Path, classes_directory: Path, data_file: Path, case: TestCase) -> str:
     """Run one fresh Jaku session and return its standard output."""
     result = subprocess.run(
-        ["java", "-cp", str(classes_directory), "Jaku"],
+        ["java", f"-Djaku.dataFile={data_file}", "-cp", str(classes_directory), "Jaku"],
         cwd=project_root,
         input=case.user_input + "\n",
         capture_output=True,
@@ -135,6 +144,28 @@ def print_transcript(case: TestCase, actual_output: str) -> None:
     print(actual_output)
 
 
+def prepare_data_file(data_file: Path, case: TestCase) -> None:
+    """Create the optional initial saved-task fixture for one test case."""
+    if case.data_path_kind == "directory":
+        data_file.mkdir(parents=True)
+    elif case.initial_data is not None:
+        data_file.parent.mkdir(parents=True)
+        data_file.write_text(case.initial_data + "\n", encoding="utf-8")
+
+
+def verify_saved_data(data_file: Path, case: TestCase) -> None:
+    """Compare saved task data when the test case specifies an expectation."""
+    if case.expected_data is None:
+        return
+    actual_data = normalize_output(data_file.read_text(encoding="utf-8"))
+    expected_data = normalize_output(case.expected_data)
+    if actual_data != expected_data:
+        raise RuntimeError(
+            f"{case.name} saved data did not match.\nExpected:\n{expected_data}\n"
+            f"Actual:\n{actual_data}"
+        )
+
+
 def main() -> int:
     """Run all planned UI cases, stopping immediately on the first failure."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -154,8 +185,10 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="jaku-ui-tests-") as temp_directory:
             classes_directory = Path(temp_directory)
             compile_sources(project_root, classes_directory)
-            for case in test_cases:
-                actual_output = run_case(project_root, classes_directory, case)
+            for case_number, case in enumerate(test_cases, start=1):
+                data_file = classes_directory / f"case-{case_number}" / "jaku.txt"
+                prepare_data_file(data_file, case)
+                actual_output = run_case(project_root, classes_directory, data_file, case)
                 print_transcript(case, actual_output)
                 expected_output = decode_expected_output(case.expected_output)
                 if actual_output != expected_output:
@@ -165,6 +198,7 @@ def main() -> int:
                     print(actual_output, file=sys.stderr)
                     print(f"FAIL: {case.name}", file=sys.stderr)
                     return 1
+                verify_saved_data(data_file, case)
                 print(f"PASS: {case.name}\n")
     except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"ERROR: {error}", file=sys.stderr)

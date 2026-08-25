@@ -1,3 +1,4 @@
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -35,6 +36,25 @@ public class Jaku {
     /** Tasks the user has added, in the order they were added. */
     private final List<Task> tasks = new ArrayList<>();
 
+    /** Saves and loads Jaku's tasks. */
+    private final Storage storage;
+
+    /**
+     * Creates Jaku with its default relative data-file location.
+     */
+    public Jaku() {
+        this(new Storage(Path.of(System.getProperty("jaku.dataFile", "data/jaku.txt"))));
+    }
+
+    /**
+     * Creates Jaku using the supplied storage mechanism.
+     *
+     * @param storage persistence mechanism for tasks
+     */
+    public Jaku(Storage storage) {
+        this.storage = storage;
+    }
+
     /**
      * Starts a new Jaku chat session.
      *
@@ -48,9 +68,21 @@ public class Jaku {
      * Runs one chat session, from greeting to farewell.
      */
     private void run() {
+        loadTasks();
         greet();
         readCommandsUntilBye();
         exit();
+    }
+
+    /**
+     * Loads saved tasks before accepting user commands.
+     */
+    private void loadTasks() {
+        try {
+            tasks.addAll(storage.load());
+        } catch (JakuException exception) {
+            reply(exception.getMessage());
+        }
     }
 
     /**
@@ -208,8 +240,14 @@ public class Jaku {
      *
      * @param task the task to remember
      */
-    private void addTask(Task task) {
+    private void addTask(Task task) throws JakuException {
         tasks.add(task);
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            tasks.remove(tasks.size() - 1);
+            throw exception;
+        }
         reply(List.of(
                 "Got it. I've added this task:",
                 "  " + task,
@@ -226,7 +264,14 @@ public class Jaku {
     private void markTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.MARK);
         Task task = tasks.get(taskIndex);
+        boolean wasDone = task.isDone();
         task.markAsDone();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            restoreTaskStatus(task, wasDone);
+            throw exception;
+        }
         reply(List.of(
                 "Nice! I've marked this task as done:",
                 "  " + task
@@ -242,7 +287,14 @@ public class Jaku {
     private void unmarkTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.UNMARK);
         Task task = tasks.get(taskIndex);
+        boolean wasDone = task.isDone();
         task.markAsNotDone();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            restoreTaskStatus(task, wasDone);
+            throw exception;
+        }
         reply(List.of(
                 "OK, I've marked this task as not done yet:",
                 "  " + task
@@ -258,11 +310,40 @@ public class Jaku {
     private void deleteTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.DELETE);
         Task removedTask = tasks.remove(taskIndex);
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            tasks.add(taskIndex, removedTask);
+            throw exception;
+        }
         reply(List.of(
                 "Noted. I've removed this task:",
                 "  " + removedTask,
                 "Now you have " + tasks.size() + " tasks in the list."
         ));
+    }
+
+    /**
+     * Writes the current task list to persistent storage.
+     *
+     * @throws JakuException if the task list cannot be saved
+     */
+    private void saveTasks() throws JakuException {
+        storage.save(tasks);
+    }
+
+    /**
+     * Restores a task's completion status after an unsuccessful save.
+     *
+     * @param task task whose status should be restored
+     * @param wasDone completion status before the attempted mutation
+     */
+    private void restoreTaskStatus(Task task, boolean wasDone) {
+        if (wasDone) {
+            task.markAsDone();
+        } else {
+            task.markAsNotDone();
+        }
     }
 
     /**

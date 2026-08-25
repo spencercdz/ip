@@ -22,6 +22,24 @@ public class Event extends Task {
     }
 
     /**
+     * Returns the event's start text without display formatting.
+     *
+     * @return the start date or time text
+     */
+    public String getFrom() {
+        return from;
+    }
+
+    /**
+     * Returns the event's end text without display formatting.
+     *
+     * @return the end date or time text
+     */
+    public String getTo() {
+        return to;
+    }
+
+    /**
      * Returns this event with its task-type icon and timing text.
      *
      * @return the event formatted for display by Jaku
