@@ -242,7 +242,12 @@ public class Jaku {
      */
     private void addTask(Task task) throws JakuException {
         tasks.add(task);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            tasks.remove(tasks.size() - 1);
+            throw exception;
+        }
         reply(List.of(
                 "Got it. I've added this task:",
                 "  " + task,
@@ -259,8 +264,14 @@ public class Jaku {
     private void markTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.MARK);
         Task task = tasks.get(taskIndex);
+        boolean wasDone = task.isDone();
         task.markAsDone();
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            restoreTaskStatus(task, wasDone);
+            throw exception;
+        }
         reply(List.of(
                 "Nice! I've marked this task as done:",
                 "  " + task
@@ -276,8 +287,14 @@ public class Jaku {
     private void unmarkTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.UNMARK);
         Task task = tasks.get(taskIndex);
+        boolean wasDone = task.isDone();
         task.markAsNotDone();
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            restoreTaskStatus(task, wasDone);
+            throw exception;
+        }
         reply(List.of(
                 "OK, I've marked this task as not done yet:",
                 "  " + task
@@ -293,7 +310,12 @@ public class Jaku {
     private void deleteTask(String input) throws JakuException {
         int taskIndex = parseTaskIndex(input, Command.DELETE);
         Task removedTask = tasks.remove(taskIndex);
-        saveTasks();
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            tasks.add(taskIndex, removedTask);
+            throw exception;
+        }
         reply(List.of(
                 "Noted. I've removed this task:",
                 "  " + removedTask,
@@ -308,6 +330,20 @@ public class Jaku {
      */
     private void saveTasks() throws JakuException {
         storage.save(tasks);
+    }
+
+    /**
+     * Restores a task's completion status after an unsuccessful save.
+     *
+     * @param task task whose status should be restored
+     * @param wasDone completion status before the attempted mutation
+     */
+    private void restoreTaskStatus(Task task, boolean wasDone) {
+        if (wasDone) {
+            task.markAsDone();
+        } else {
+            task.markAsNotDone();
+        }
     }
 
     /**

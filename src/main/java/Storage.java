@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +54,7 @@ public class Storage {
      * @throws JakuException if the data file cannot be written
      */
     public void save(List<Task> tasks) throws JakuException {
+        Path temporaryFile = null;
         try {
             Path parent = dataFile.getParent();
             if (parent != null) {
@@ -61,9 +64,36 @@ public class Storage {
             for (Task task : tasks) {
                 lines.add(formatTask(task));
             }
-            Files.write(dataFile, lines, StandardCharsets.UTF_8);
+            Path directory = parent == null ? Path.of(".") : parent;
+            temporaryFile = Files.createTempFile(directory, "jaku-", ".tmp");
+            Files.write(temporaryFile, lines, StandardCharsets.UTF_8);
+            replaceDataFile(temporaryFile);
+            temporaryFile = null;
         } catch (IOException exception) {
             throw new JakuException("I couldn't save your tasks.");
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile);
+                } catch (IOException ignored) {
+                    // The original save error is more useful to the user than a cleanup error.
+                }
+            }
+        }
+    }
+
+    /**
+     * Replaces the saved data file with a completed temporary file.
+     *
+     * @param temporaryFile file containing the complete new task list
+     * @throws IOException if the replacement cannot be completed
+     */
+    private void replaceDataFile(Path temporaryFile) throws IOException {
+        try {
+            Files.move(temporaryFile, dataFile, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(temporaryFile, dataFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

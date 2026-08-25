@@ -466,3 +466,146 @@ ____________________________________________________________
 Bye for now. Hope to see you again soon!
 ____________________________________________________________
 ```
+
+## L7-1 Save tasks after successful mutations
+
+Aim: Verify a missing data directory is created and all task types, including completion state, are persisted.
+
+### Input
+
+```text
+todo read book
+deadline return book /by Sunday
+event meeting /from 2pm /to 4pm
+mark 2
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] read book
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [D][ ] return book (by: Sunday)
+Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [E][ ] meeting (from: 2pm to: 4pm)
+Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Nice! I've marked this task as done:
+  [D][X] return book (by: Sunday)
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+### Expected saved data
+
+```text
+T	0	read book
+D	1	return book	Sunday
+E	0	meeting	2pm	4pm
+```
+
+## L7-2 Load valid records and skip corrupt records
+
+Aim: Verify a later Jaku process restores valid task types and completion state while silently skipping malformed data.
+
+### Input
+
+```text
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[T][ ] read book
+2.[D][X] return book (by: Sunday)
+3.[E][ ] meeting (from: 2pm to: 4pm)
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+### Initial data
+
+```text
+T	0	read book
+D	1	return book	Sunday
+E	0	meeting	2pm	4pm
+Q	0	unknown type
+D	2	invalid status	Monday
+E	0	missing fields
+T	0	bad\qescape
+```
+
+## L7-3 Keep running when persistence fails
+
+Aim: Verify a read or write failure produces a framed error and does not add an unsaved task to memory.
+
+### Input
+
+```text
+todo cannot save
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+I couldn't load your saved tasks.
+____________________________________________________________
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+I couldn't save your tasks.
+____________________________________________________________
+____________________________________________________________
+Your list is empty for now.
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+### Data path kind
+
+directory
