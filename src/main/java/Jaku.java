@@ -1,4 +1,6 @@
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -194,7 +196,7 @@ public class Jaku {
      * Creates a deadline from its command and adds it to the task list.
      *
      * @param input a deadline command containing a description and {@code /by} value
-     * @throws JakuException if the description, separator, or due text is missing
+     * @throws JakuException if the description, separator, or due date is invalid
      */
     private void addDeadline(String input) throws JakuException {
         String arguments = Command.DEADLINE.getArguments(input);
@@ -207,7 +209,11 @@ public class Jaku {
         if (description.isEmpty() || by.isEmpty()) {
             throw new JakuException("Use: deadline <description> /by <date or time>.");
         }
-        addTask(new Deadline(description, by));
+        try {
+            addTask(new Deadline(description, LocalDate.parse(by)));
+        } catch (DateTimeParseException exception) {
+            throw new JakuException("Use: deadline <description> /by yyyy-MM-dd.");
+        }
     }
 
     /**
