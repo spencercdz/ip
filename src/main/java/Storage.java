@@ -4,6 +4,8 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -109,7 +111,7 @@ public class Storage {
             return String.join("\t", "T", status, escape(task.getDescription()));
         }
         if (task instanceof Deadline deadline) {
-            return String.join("\t", "D", status, escape(task.getDescription()), escape(deadline.getBy()));
+            return String.join("\t", "D", status, escape(task.getDescription()), deadline.getBy().toString());
         }
         if (task instanceof Event event) {
             return String.join("\t", "E", status, escape(task.getDescription()), escape(event.getFrom()), escape(event.getTo()));
@@ -131,7 +133,7 @@ public class Storage {
         try {
             Task task = switch (fields[0]) {
             case "T" -> fields.length == 3 ? new Todo(unescape(fields[2])) : null;
-            case "D" -> fields.length == 4 ? new Deadline(unescape(fields[2]), unescape(fields[3])) : null;
+            case "D" -> fields.length == 4 ? new Deadline(unescape(fields[2]), LocalDate.parse(fields[3])) : null;
             case "E" -> fields.length == 5 ? new Event(unescape(fields[2]), unescape(fields[3]), unescape(fields[4])) : null;
             default -> null;
             };
@@ -139,7 +141,7 @@ public class Storage {
                 task.markAsDone();
             }
             return task;
-        } catch (IllegalArgumentException exception) {
+        } catch (DateTimeException | IllegalArgumentException exception) {
             return null;
         }
     }
