@@ -1,3 +1,5 @@
+package jaku;
+
 /**
  * Represents an expected problem with a command entered by the user.
  */

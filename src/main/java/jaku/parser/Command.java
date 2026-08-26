@@ -1,3 +1,5 @@
+package jaku.parser;
+
 /**
  * Identifies a command that Jaku can carry out.
  */
@@ -18,7 +20,7 @@ public enum Command {
     /**
      * Creates a command with its user-facing keyword.
      *
-     * @param keyword text used to invoke the command
+     * @param keyword text used to invoke this command
      */
     Command(String keyword) {
         this.keyword = keyword;
@@ -32,5 +34,4 @@ public enum Command {
     public String getKeyword() {
         return keyword;
     }
-
 }

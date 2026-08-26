@@ -1,7 +1,19 @@
+package jaku;
+
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+
+import jaku.parser.Command;
+import jaku.parser.Parser;
+import jaku.storage.Storage;
+import jaku.task.Deadline;
+import jaku.task.Event;
+import jaku.task.Task;
+import jaku.task.TaskList;
+import jaku.task.Todo;
+import jaku.ui.Ui;
 
 /**
  * Coordinates Jaku's parser, task list, storage, and console user interface.

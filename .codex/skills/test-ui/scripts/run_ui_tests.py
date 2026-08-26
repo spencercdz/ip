@@ -42,9 +42,9 @@ def find_project_root() -> Path:
     """Return the nearest parent directory containing Jaku's Java sources."""
     candidates = (Path.cwd(), *Path.cwd().parents, *Path(__file__).resolve().parents)
     for candidate in candidates:
-        if (candidate / "src/main/java/Jaku.java").is_file():
+        if (candidate / "src/main/java/jaku/Jaku.java").is_file():
             return candidate
-    raise RuntimeError("Could not find a project root containing src/main/java/Jaku.java")
+    raise RuntimeError("Could not find a project root containing src/main/java/jaku/Jaku.java")
 
 
 def parse_test_plan(plan_path: Path) -> list[TestCase]:
@@ -93,7 +93,7 @@ def verify_java_25(project_root: Path) -> None:
 
 def compile_sources(project_root: Path, classes_directory: Path) -> None:
     """Compile all production Java sources with warnings treated as errors."""
-    source_files = sorted((project_root / "src/main/java").glob("*.java"))
+    source_files = sorted((project_root / "src/main/java").rglob("*.java"))
     if not source_files:
         raise RuntimeError("No Java source files found in src/main/java")
     result = subprocess.run(
@@ -118,7 +118,7 @@ def compile_sources(project_root: Path, classes_directory: Path) -> None:
 def run_case(project_root: Path, classes_directory: Path, data_file: Path, case: TestCase) -> str:
     """Run one fresh Jaku session and return its standard output."""
     result = subprocess.run(
-        ["java", f"-Djaku.dataFile={data_file}", "-cp", str(classes_directory), "Jaku"],
+        ["java", f"-Djaku.dataFile={data_file}", "-cp", str(classes_directory), "jaku.Jaku"],
         cwd=project_root,
         input=case.user_input + "\n",
         capture_output=True,

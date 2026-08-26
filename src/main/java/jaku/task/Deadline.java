@@ -1,3 +1,5 @@
+package jaku.task;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -14,7 +16,7 @@ public class Deadline extends Task {
     private final LocalDate by;
 
     /**
-     * Creates an incomplete deadline with the given description and due text.
+     * Creates an incomplete deadline with the given description and due date.
      *
      * @param description the text describing the deadline
      * @param by the date by which it should be completed

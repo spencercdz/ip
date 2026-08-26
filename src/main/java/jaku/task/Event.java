@@ -1,3 +1,5 @@
+package jaku.task;
+
 /**
  * Represents a task that occurs between a given start and end date or time.
  */
