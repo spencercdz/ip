@@ -1,22 +1,13 @@
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
- * Entry point of the Jaku chatbot.
- * <p>
- * Jaku greets the user, tracks todos, deadlines, and events, shows those tasks
- * on request via the {@code list} command, and says goodbye when the user enters
- * the {@code bye} command.
+ * Coordinates Jaku's parser, task list, storage, and console user interface.
  */
 public class Jaku {
-    /** Name the chatbot introduces itself with. */
-    private static final String NAME = "Jaku";
-
-    /** Marker between a deadline's description and its due date or time. */
+    /** Marker between a deadline's description and its due date. */
     private static final String BY_SEPARATOR = "/by";
 
     /** Marker between an event's description and its start date or time. */
@@ -25,25 +16,16 @@ public class Jaku {
     /** Marker between an event's start and end dates or times. */
     private static final String TO_SEPARATOR = "/to";
 
-    /** Horizontal line used to separate the chatbot's replies from the user's input. */
-    private static final String DIVIDER = "____________________________________________________________";
-
-    /** ASCII-art banner spelling out the chatbot's name. */
-    private static final String BANNER = "     _     _     _  __ _   _ \n"
-            + "    | |   / \\   | |/ /| | | |\n"
-            + " _  | |  / _ \\  | ' / | | | |\n"
-            + "| |_| | / ___ \\ | . \\ | |_| |\n"
-            + " \\___/ /_/   \\_\\|_|\\_\\ \\___/ ";
-
-    /** Tasks the user has added, in the order they were added. */
-    private final List<Task> tasks = new ArrayList<>();
-
     /** Saves and loads Jaku's tasks. */
     private final Storage storage;
 
-    /**
-     * Creates Jaku with its default relative data-file location.
-     */
+    /** Stores the tasks in the current chat session. */
+    private final TaskList tasks;
+
+    /** Reads user commands and displays Jaku's replies. */
+    private final Ui ui;
+
+    /** Creates Jaku with its default relative data-file location. */
     public Jaku() {
         this(new Storage(Path.of(System.getProperty("jaku.dataFile", "data/jaku.txt"))));
     }
@@ -55,6 +37,8 @@ public class Jaku {
      */
     public Jaku(Storage storage) {
         this.storage = storage;
+        this.ui = new Ui();
+        this.tasks = loadTasks();
     }
 
     /**
@@ -66,62 +50,42 @@ public class Jaku {
         new Jaku().run();
     }
 
-    /**
-     * Runs one chat session, from greeting to farewell.
-     */
+    /** Runs one chat session, from greeting to farewell. */
     private void run() {
-        loadTasks();
-        greet();
+        ui.showWelcome();
         readCommandsUntilBye();
-        exit();
+        ui.showGoodbye();
     }
 
     /**
      * Loads saved tasks before accepting user commands.
+     *
+     * @return loaded tasks, or an empty list when loading fails
      */
-    private void loadTasks() {
+    private TaskList loadTasks() {
         try {
-            tasks.addAll(storage.load());
+            return new TaskList(storage.load());
         } catch (JakuException exception) {
-            reply(exception.getMessage());
+            ui.showResponse(exception.getMessage());
+            return new TaskList();
         }
     }
 
-    /**
-     * Prints the welcome message shown when Jaku starts up.
-     */
-    private void greet() {
-        System.out.println(DIVIDER);
-        System.out.println(BANNER);
-        System.out.println("Hello there! I'm " + NAME + ".");
-        System.out.println("How can I help you today?");
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Reads the user's input line by line and carries out each command.
-     * <p>
-     * Stops when the user enters the {@code bye} command, or when the input
-     * runs out (for example when input is piped in from a file). Blank lines
-     * are ignored, so that pressing Enter alone does not produce an empty
-     * reply.
-     */
+    /** Reads user commands line by line until the user enters {@code bye}. */
     private void readCommandsUntilBye() {
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (scanner.hasNextLine()) {
-                String input = scanner.nextLine().trim();
-                if (input.isEmpty()) {
-                    continue;
-                }
-                Command command = Command.fromInput(input);
-                if (command == Command.BYE && command.getArguments(input).isEmpty()) {
-                    return;
-                }
-                try {
-                    handleCommand(command, input);
-                } catch (JakuException exception) {
-                    reply(exception.getMessage());
-                }
+        while (ui.hasNextCommand()) {
+            String input = ui.readCommand();
+            if (input.isEmpty()) {
+                continue;
+            }
+            Command command = Parser.parseCommand(input);
+            if (command == Command.BYE && Parser.getArguments(input, command).isEmpty()) {
+                return;
+            }
+            try {
+                handleCommand(command, input);
+            } catch (JakuException exception) {
+                ui.showResponse(exception.getMessage());
             }
         }
     }
@@ -136,10 +100,10 @@ public class Jaku {
     private void handleCommand(Command command, String input) throws JakuException {
         switch (command) {
         case LIST:
-            if (!command.getArguments(input).isEmpty()) {
+            if (!Parser.getArguments(input, command).isEmpty()) {
                 throw unknownCommandException();
             }
-            showTasks();
+            ui.showTaskList(tasks);
             break;
         case MARK:
             markTask(input);
@@ -185,7 +149,7 @@ public class Jaku {
      * @throws JakuException if the todo description is empty
      */
     private void addTodo(String input) throws JakuException {
-        String description = Command.TODO.getArguments(input);
+        String description = Parser.getArguments(input, Command.TODO);
         if (description.isEmpty()) {
             throw new JakuException("I need a description after \"todo\".");
         }
@@ -199,7 +163,7 @@ public class Jaku {
      * @throws JakuException if the description, separator, or due date is invalid
      */
     private void addDeadline(String input) throws JakuException {
-        String arguments = Command.DEADLINE.getArguments(input);
+        String arguments = Parser.getArguments(input, Command.DEADLINE);
         int separatorIndex = arguments.indexOf(BY_SEPARATOR);
         if (separatorIndex < 0) {
             throw new JakuException("Use: deadline <description> /by <date or time>.");
@@ -223,7 +187,7 @@ public class Jaku {
      * @throws JakuException if the description, separators, start text, or end text is missing
      */
     private void addEvent(String input) throws JakuException {
-        String arguments = Command.EVENT.getArguments(input);
+        String arguments = Parser.getArguments(input, Command.EVENT);
         int fromIndex = arguments.indexOf(FROM_SEPARATOR);
         if (fromIndex < 0) {
             throw new JakuException("Use: event <description> /from <start> /to <end>.");
@@ -245,6 +209,7 @@ public class Jaku {
      * Stores a new task and confirms its addition and the updated task count.
      *
      * @param task the task to remember
+     * @throws JakuException if the task list cannot be saved
      */
     private void addTask(Task task) throws JakuException {
         tasks.add(task);
@@ -254,7 +219,7 @@ public class Jaku {
             tasks.remove(tasks.size() - 1);
             throw exception;
         }
-        reply(List.of(
+        ui.showResponse(List.of(
                 "Got it. I've added this task:",
                 "  " + task,
                 "Now you have " + tasks.size() + " tasks in the list."
@@ -265,10 +230,10 @@ public class Jaku {
      * Marks the task selected by a one-based task number as done.
      *
      * @param input a mark command followed by a task number
-     * @throws JakuException if the task number is missing, invalid, or outside the list
+     * @throws JakuException if the task number is invalid or outside the list
      */
     private void markTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, Command.MARK);
+        int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.MARK));
         Task task = tasks.get(taskIndex);
         boolean wasDone = task.isDone();
         task.markAsDone();
@@ -278,20 +243,17 @@ public class Jaku {
             restoreTaskStatus(task, wasDone);
             throw exception;
         }
-        reply(List.of(
-                "Nice! I've marked this task as done:",
-                "  " + task
-        ));
+        ui.showResponse(List.of("Nice! I've marked this task as done:", "  " + task));
     }
 
     /**
      * Marks the task selected by a one-based task number as not done.
      *
      * @param input an unmark command followed by a task number
-     * @throws JakuException if the task number is missing, invalid, or outside the list
+     * @throws JakuException if the task number is invalid or outside the list
      */
     private void unmarkTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, Command.UNMARK);
+        int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.UNMARK));
         Task task = tasks.get(taskIndex);
         boolean wasDone = task.isDone();
         task.markAsNotDone();
@@ -301,20 +263,17 @@ public class Jaku {
             restoreTaskStatus(task, wasDone);
             throw exception;
         }
-        reply(List.of(
-                "OK, I've marked this task as not done yet:",
-                "  " + task
-        ));
+        ui.showResponse(List.of("OK, I've marked this task as not done yet:", "  " + task));
     }
 
     /**
      * Removes the task selected by a one-based task number.
      *
      * @param input a delete command followed by a task number
-     * @throws JakuException if the task number is missing, invalid, or outside the list
+     * @throws JakuException if the task number is invalid or outside the list
      */
     private void deleteTask(String input) throws JakuException {
-        int taskIndex = parseTaskIndex(input, Command.DELETE);
+        int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.DELETE));
         Task removedTask = tasks.remove(taskIndex);
         try {
             saveTasks();
@@ -322,7 +281,7 @@ public class Jaku {
             tasks.add(taskIndex, removedTask);
             throw exception;
         }
-        reply(List.of(
+        ui.showResponse(List.of(
                 "Noted. I've removed this task:",
                 "  " + removedTask,
                 "Now you have " + tasks.size() + " tasks in the list."
@@ -335,7 +294,7 @@ public class Jaku {
      * @throws JakuException if the task list cannot be saved
      */
     private void saveTasks() throws JakuException {
-        storage.save(tasks);
+        storage.save(tasks.asList());
     }
 
     /**
@@ -350,73 +309,5 @@ public class Jaku {
         } else {
             task.markAsNotDone();
         }
-    }
-
-    /**
-     * Parses and validates the one-based task number supplied to a task command.
-     *
-     * @param input the complete user input
-     * @param command the command whose task number should be parsed
-     * @return the corresponding zero-based task-list index
-     * @throws JakuException if the number is missing, nonnumeric, or outside the list
-     */
-    private int parseTaskIndex(String input, Command command) throws JakuException {
-        String taskNumberText = command.getArguments(input);
-        int taskNumber;
-        try {
-            taskNumber = Integer.parseInt(taskNumberText);
-        } catch (NumberFormatException exception) {
-            throw new JakuException("Use: " + command.getKeyword() + " <task number>.");
-        }
-        if (taskNumber < 1 || taskNumber > tasks.size()) {
-            throw new JakuException("Task number " + taskNumber + " is not in the list.");
-        }
-        return taskNumber - 1;
-    }
-
-    /**
-     * Shows every stored item, numbered from one.
-     */
-    private void showTasks() {
-        if (tasks.isEmpty()) {
-            reply("Your list is empty for now.");
-            return;
-        }
-        List<String> lines = new ArrayList<>();
-        lines.add("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            lines.add((i + 1) + "." + tasks.get(i));
-        }
-        reply(lines);
-    }
-
-    /**
-     * Prints a single-line reply from Jaku.
-     *
-     * @param line the text to show to the user
-     */
-    private void reply(String line) {
-        reply(List.of(line));
-    }
-
-    /**
-     * Prints a reply from Jaku, framed by divider lines.
-     *
-     * @param lines the lines to show to the user, in order
-     */
-    private void reply(List<String> lines) {
-        System.out.println(DIVIDER);
-        for (String line : lines) {
-            System.out.println(line);
-        }
-        System.out.println(DIVIDER);
-    }
-
-    /**
-     * Prints the farewell message shown before Jaku shuts down.
-     */
-    private void exit() {
-        System.out.println("Bye for now. Hope to see you again soon!");
-        System.out.println(DIVIDER);
     }
 }
