@@ -1,6 +1,10 @@
+package jaku.ui;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import jaku.task.TaskList;
 
 /**
  * Handles Jaku's console input and all text displayed to the user.

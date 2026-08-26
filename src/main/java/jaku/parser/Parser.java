@@ -1,4 +1,8 @@
+package jaku.parser;
+
 import java.util.Locale;
+
+import jaku.JakuException;
 
 /**
  * Interprets a user's input line as a Jaku command and its arguments.

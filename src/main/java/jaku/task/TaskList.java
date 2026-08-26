@@ -1,5 +1,9 @@
+package jaku.task;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import jaku.JakuException;
 
 /**
  * Stores Jaku tasks and provides operations on their one-based task numbers.
@@ -22,7 +26,8 @@ public class TaskList {
         this.tasks = new ArrayList<>(tasks);
     }
 
-    /** Adds a task to the end of this list.
+    /**
+     * Adds a task to the end of this list.
      *
      * @param task task to add
      */

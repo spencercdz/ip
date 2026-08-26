@@ -1,3 +1,5 @@
+package jaku.task;
+
 /**
  * Represents a task tracked by Jaku, including its description and completion status.
  */
@@ -18,16 +20,12 @@ public class Task {
         this.isDone = false;
     }
 
-    /**
-     * Marks this task as completed.
-     */
+    /** Marks this task as completed. */
     public void markAsDone() {
         isDone = true;
     }
 
-    /**
-     * Marks this task as not completed.
-     */
+    /** Marks this task as not completed. */
     public void markAsNotDone() {
         isDone = false;
     }
