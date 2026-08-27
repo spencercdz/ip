@@ -17,6 +17,9 @@ import jaku.ui.Ui;
 
 /**
  * Coordinates Jaku's parser, task list, storage, and console user interface.
+ * <p>
+ * A chat session loads saved tasks, accepts commands until {@code bye}, and
+ * delegates persistence and presentation to the appropriate collaborators.
  */
 public class Jaku {
     /** Marker between a deadline's description and its due date. */

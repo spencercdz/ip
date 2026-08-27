@@ -8,6 +8,10 @@ import jaku.JakuException;
  * Interprets a user's input line as a Jaku command and its arguments.
  */
 public class Parser {
+    /** Prevents instantiation of this utility class. */
+    private Parser() {
+    }
+
     /**
      * Finds the command represented by the first word of an input line.
      *
