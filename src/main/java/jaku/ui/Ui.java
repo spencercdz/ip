@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import jaku.task.Task;
 import jaku.task.TaskList;
 
 /**
@@ -94,6 +95,24 @@ public class Ui {
         lines.add("Here are the tasks in your list:");
         for (int i = 0; i < tasks.size(); i++) {
             lines.add((i + 1) + "." + tasks.get(i));
+        }
+        showResponse(lines);
+    }
+
+    /**
+     * Shows the tasks that match a user's find keyword, numbered from one.
+     *
+     * @param matches matching tasks in display order
+     */
+    public void showMatchingTasks(List<Task> matches) {
+        if (matches.isEmpty()) {
+            showResponse("No matching tasks found.");
+            return;
+        }
+        List<String> lines = new ArrayList<>();
+        lines.add("Here are the matching tasks in your list:");
+        for (int i = 0; i < matches.size(); i++) {
+            lines.add((i + 1) + "." + matches.get(i));
         }
         showResponse(lines);
     }

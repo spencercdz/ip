@@ -138,6 +138,9 @@ public class Jaku {
         case DELETE:
             deleteTask(input);
             break;
+        case FIND:
+            findTasks(input);
+            break;
         case BYE:
         case UNKNOWN:
             throw unknownCommandException();
@@ -153,8 +156,22 @@ public class Jaku {
      */
     private JakuException unknownCommandException() {
         return new JakuException(
-                "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye."
+                "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye."
         );
+    }
+
+    /**
+     * Shows tasks whose descriptions contain the keyword supplied by the user.
+     *
+     * @param input a find command followed by a keyword
+     * @throws JakuException if the find keyword is empty
+     */
+    private void findTasks(String input) throws JakuException {
+        String keyword = Parser.getArguments(input, Command.FIND);
+        if (keyword.isEmpty()) {
+            throw new JakuException("I need a keyword after \"find\".");
+        }
+        ui.showMatchingTasks(tasks.find(keyword));
     }
 
     /**

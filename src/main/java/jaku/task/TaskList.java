@@ -2,6 +2,7 @@ package jaku.task;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import jaku.JakuException;
 
@@ -77,6 +78,23 @@ public class TaskList {
             throw new JakuException("Task number " + taskNumber + " is not in the list.");
         }
         return taskNumber - 1;
+    }
+
+    /**
+     * Returns tasks whose descriptions contain a keyword, ignoring letter case.
+     *
+     * @param keyword text to find within task descriptions
+     * @return matching tasks in their original list order
+     */
+    public List<Task> find(String keyword) {
+        String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
+        List<Task> matches = new ArrayList<>();
+        for (Task task : tasks) {
+            if (task.getDescription().toLowerCase(Locale.ROOT).contains(normalizedKeyword)) {
+                matches.add(task);
+            }
+        }
+        return matches;
     }
 
     /**
