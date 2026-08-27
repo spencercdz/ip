@@ -16,6 +16,7 @@ class ParserTest {
     void parseCommand_recognizesCommandsCaseInsensitively() {
         assertEquals(Command.TODO, Parser.parseCommand("ToDo read book"));
         assertEquals(Command.DELETE, Parser.parseCommand("DELETE 3"));
+        assertEquals(Command.FIND, Parser.parseCommand("find book"));
         assertEquals(Command.BYE, Parser.parseCommand("bye"));
     }
 

@@ -12,6 +12,7 @@ public enum Command {
     DEADLINE("deadline"),
     EVENT("event"),
     DELETE("delete"),
+    FIND("find"),
     UNKNOWN("");
 
     /** Text entered by the user to invoke this command. */

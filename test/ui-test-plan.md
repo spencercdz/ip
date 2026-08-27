@@ -162,7 +162,7 @@ Got it. I've added this task:
 Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
@@ -315,10 +315,10 @@ OK, I've marked this task as not done yet:
   [T][ ] only task
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, or bye.
+I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
@@ -658,6 +658,76 @@ ____________________________________________________________
 Here are the tasks in your list:
 1.[D][ ] submit report (by: Feb 29 2024)
 2.[T][ ] unchanged task
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## L9-1 Find tasks by a case-insensitive keyword
+
+Aim: Verify matching across task types, case-insensitive and multi-word matching, empty results, and missing-keyword guidance.
+
+### Input
+
+```text
+todo read Book
+deadline return library book /by 2026-06-06
+event book club /from 6pm /to 8pm
+todo write report
+find BOOK
+find library book
+find meeting
+find
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] read Book
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [D][ ] return library book (by: Jun 6 2026)
+Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [E][ ] book club (from: 6pm to: 8pm)
+Now you have 3 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [T][ ] write report
+Now you have 4 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Here are the matching tasks in your list:
+1.[T][ ] read Book
+2.[D][ ] return library book (by: Jun 6 2026)
+3.[E][ ] book club (from: 6pm to: 8pm)
+____________________________________________________________
+____________________________________________________________
+Here are the matching tasks in your list:
+1.[D][ ] return library book (by: Jun 6 2026)
+____________________________________________________________
+____________________________________________________________
+No matching tasks found.
+____________________________________________________________
+____________________________________________________________
+I need a keyword after "find".
 ____________________________________________________________
 Bye for now. Hope to see you again soon!
 ____________________________________________________________

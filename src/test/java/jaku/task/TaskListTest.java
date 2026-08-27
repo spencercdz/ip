@@ -2,6 +2,9 @@ package jaku.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,30 @@ class TaskListTest {
     @Test
     void getIndex_rejectsTaskNumberForEmptyList() {
         assertInvalidTaskNumber(new TaskList(), 1);
+    }
+
+    /** Verifies that find is case-insensitive, accepts phrases, and preserves task order. */
+    @Test
+    void find_matchingTasks_returnsCaseInsensitiveMatchesInListOrder() {
+        TaskList tasks = new TaskList();
+        Task firstMatch = new Todo("Read BOOK");
+        Task nonMatch = new Todo("Write report");
+        Task secondMatch = new Todo("Return book to library");
+        tasks.add(firstMatch);
+        tasks.add(nonMatch);
+        tasks.add(secondMatch);
+
+        assertEquals(List.of(firstMatch, secondMatch), tasks.find("book"));
+        assertEquals(List.of(secondMatch), tasks.find("BOOK TO LIBRARY"));
+    }
+
+    /** Verifies that find returns an empty list when no description contains the keyword. */
+    @Test
+    void find_noMatchingTasks_returnsEmptyList() {
+        TaskList tasks = new TaskList();
+        tasks.add(new Todo("Read book"));
+
+        assertTrue(tasks.find("meeting").isEmpty());
     }
 
     /**
