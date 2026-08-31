@@ -65,10 +65,14 @@ public class Ui {
     /**
      * Shows a one-line framed reply.
      *
-     * @param line text to show to the user
+     * @param lines text lines to show to the user
      */
-    public void showResponse(String line) {
-        showResponse(List.of(line));
+    public void showResponse(String... lines) {
+        showLine();
+        for (String line : lines) {
+            printLine(line);
+        }
+        showLine();
     }
 
     /**
