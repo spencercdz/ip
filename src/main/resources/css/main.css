@@ -1,0 +1,4 @@
+.root { -fx-font-family: "Arial"; }
+.label { -fx-padding: 8; -fx-background-radius: 8; }
+.user-message { -fx-background-color: #cfe8ff; }
+.jaku-message { -fx-background-color: #e5f4e3; }

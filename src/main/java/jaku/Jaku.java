@@ -40,6 +40,9 @@ public class Jaku {
     /** Reads user commands and displays Jaku's replies. */
     private final Ui ui;
 
+    /** Whether the last command requested application exit. */
+    private boolean exitRequested;
+
     /** Creates Jaku with its default relative data-file location. */
     public Jaku() {
         this(new Storage(Path.of(System.getProperty("jaku.dataFile", "data/jaku.txt"))));
@@ -69,7 +72,9 @@ public class Jaku {
     private void run() {
         ui.showWelcome();
         readCommandsUntilBye();
-        ui.showGoodbye();
+        if (!exitRequested) {
+            ui.showGoodbye();
+        }
     }
 
     /**
@@ -90,19 +95,41 @@ public class Jaku {
     private void readCommandsUntilBye() {
         while (ui.hasNextCommand()) {
             String input = ui.readCommand();
-            if (input.isEmpty()) {
-                continue;
-            }
-            Command command = Parser.parseCommand(input);
-            if (command == Command.BYE && Parser.getArguments(input, command).isEmpty()) {
+            String response = getResponse(input);
+            ui.showRaw(response);
+            if (exitRequested) {
                 return;
             }
-            try {
-                handleCommand(command, input);
-            } catch (JakuException exception) {
-                ui.showResponse(exception.getMessage());
-            }
         }
+    }
+
+    /** Processes one command and returns its complete user-facing response.
+     *
+     * @param input command entered by the user
+     * @return formatted response, or an empty string for blank input
+     */
+    public String getResponse(String input) {
+        if (input.isEmpty()) {
+            return "";
+        }
+        ui.startCapturing();
+        Command command = Parser.parseCommand(input);
+        if (command == Command.BYE && Parser.getArguments(input, command).isEmpty()) {
+            exitRequested = true;
+            ui.showGoodbye();
+            return ui.stopCapturing();
+        }
+        try {
+            handleCommand(command, input);
+        } catch (JakuException exception) {
+            ui.showResponse(exception.getMessage());
+        }
+        return ui.stopCapturing();
+    }
+
+    /** Returns whether the last command requested application exit. */
+    public boolean isExitRequested() {
+        return exitRequested;
     }
 
     /**

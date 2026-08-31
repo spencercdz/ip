@@ -2,6 +2,10 @@
 
 Each case is run in a fresh Jaku process. Output comparisons are exact, including spacing and divider lines. Use `␠` to represent a trailing space in an expected-output block.
 
+## L10-1 JavaFX command flow (manual)
+
+Aim: Verify the GUI shows the welcome message, sends a command with both Enter and Send, displays the command and response in order, scrolls to new dialogs, and closes after `bye`.
+
 ## L4-1 Add and list every task type
 
 Aim: Verify todos, ISO deadline dates, multi-day events, confirmations, counts, and list formatting.
