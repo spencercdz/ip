@@ -27,6 +27,9 @@ public class Ui {
     /** Source of commands typed into Jaku's console. */
     private final Scanner scanner;
 
+    /** Output captured while Jaku creates a response for another UI. */
+    private StringBuilder capturedOutput;
+
     /** Creates a user interface that reads commands from the standard input stream. */
     public Ui() {
         scanner = new Scanner(System.in);
@@ -53,9 +56,9 @@ public class Ui {
     /** Prints Jaku's welcome message. */
     public void showWelcome() {
         showLine();
-        System.out.println(BANNER);
-        System.out.println("Hello there! I'm " + NAME + ".");
-        System.out.println("How can I help you today?");
+        printLine(BANNER);
+        printLine("Hello there! I'm " + NAME + ".");
+        printLine("How can I help you today?");
         showLine();
     }
 
@@ -76,7 +79,7 @@ public class Ui {
     public void showResponse(List<String> lines) {
         showLine();
         for (String line : lines) {
-            System.out.println(line);
+            printLine(line);
         }
         showLine();
     }
@@ -119,12 +122,40 @@ public class Ui {
 
     /** Prints the farewell message shown before Jaku shuts down. */
     public void showGoodbye() {
-        System.out.println("Bye for now. Hope to see you again soon!");
+        printLine("Bye for now. Hope to see you again soon!");
         showLine();
     }
 
     /** Prints the standard horizontal divider. */
     public void showLine() {
-        System.out.println(DIVIDER);
+        printLine(DIVIDER);
+    }
+
+    /** Starts capturing response output rather than writing it to the console. */
+    public void startCapturing() {
+        capturedOutput = new StringBuilder();
+    }
+
+    /** Stops capturing and returns the captured response. */
+    public String stopCapturing() {
+        String output = capturedOutput.toString();
+        capturedOutput = null;
+        return output.stripTrailing();
+    }
+
+    /** Prints one complete response without adding another response frame. */
+    public void showRaw(String response) {
+        if (!response.isEmpty()) {
+            System.out.println(response);
+        }
+    }
+
+    /** Writes one line to the current output destination. */
+    private void printLine(String line) {
+        if (capturedOutput == null) {
+            System.out.println(line);
+        } else {
+            capturedOutput.append(line).append(System.lineSeparator());
+        }
     }
 }
