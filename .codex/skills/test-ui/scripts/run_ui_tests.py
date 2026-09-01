@@ -92,19 +92,9 @@ def verify_java_25(project_root: Path) -> None:
 
 
 def compile_sources(project_root: Path, classes_directory: Path) -> None:
-    """Compile all production Java sources with warnings treated as errors."""
-    source_files = sorted((project_root / "src/main/java").rglob("*.java"))
-    if not source_files:
-        raise RuntimeError("No Java source files found in src/main/java")
+    """Compile production sources through Gradle, including declared JavaFX dependencies."""
     result = subprocess.run(
-        [
-            "javac",
-            "-Xlint:all",
-            "-Werror",
-            "-d",
-            str(classes_directory),
-            *(str(source_file) for source_file in source_files),
-        ],
+        ["./gradlew", "classes", "--no-daemon"],
         cwd=project_root,
         capture_output=True,
         text=True,
@@ -112,7 +102,7 @@ def compile_sources(project_root: Path, classes_directory: Path) -> None:
     )
     if result.returncode != 0:
         details = (result.stdout + result.stderr).strip()
-        raise RuntimeError(f"Compilation failed:\n{details}")
+        raise RuntimeError(f"Gradle compilation failed:\n{details}")
 
 
 def run_case(project_root: Path, classes_directory: Path, data_file: Path, case: TestCase) -> str:
@@ -183,7 +173,7 @@ def main() -> int:
         test_cases = parse_test_plan(plan_path)
         verify_java_25(project_root)
         with tempfile.TemporaryDirectory(prefix="jaku-ui-tests-") as temp_directory:
-            classes_directory = Path(temp_directory)
+            classes_directory = project_root / "build/classes/java/main"
             compile_sources(project_root, classes_directory)
             for case_number, case in enumerate(test_cases, start=1):
                 data_file = classes_directory / f"case-{case_number}" / "jaku.txt"
