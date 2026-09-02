@@ -176,7 +176,7 @@ def main() -> int:
             classes_directory = project_root / "build/classes/java/main"
             compile_sources(project_root, classes_directory)
             for case_number, case in enumerate(test_cases, start=1):
-                data_file = classes_directory / f"case-{case_number}" / "jaku.txt"
+                data_file = Path(temp_directory) / f"case-{case_number}" / "jaku.txt"
                 prepare_data_file(data_file, case)
                 actual_output = run_case(project_root, classes_directory, data_file, case)
                 print_transcript(case, actual_output)

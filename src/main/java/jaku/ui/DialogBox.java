@@ -9,6 +9,7 @@ public class DialogBox extends HBox {
     private DialogBox(String text, boolean user) {
         Label label = new Label(text);
         label.setWrapText(true);
+        label.getStyleClass().add("message-bubble");
         label.getStyleClass().add(user ? "user-message" : "jaku-message");
         setAlignment(user ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
         getChildren().add(label);

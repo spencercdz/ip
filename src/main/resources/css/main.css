@@ -1,4 +1,44 @@
-.root { -fx-font-family: "Arial"; }
-.label { -fx-padding: 8; -fx-background-radius: 8; }
-.user-message { -fx-background-color: #cfe8ff; }
-.jaku-message { -fx-background-color: #e5f4e3; }
+.root {
+    -fx-font-family: "SF Pro Text", "Inter", "Arial";
+    -fx-background-color: #f8fafc;
+}
+
+.app-header {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #e2e8f0 transparent;
+    -fx-padding: 18 24;
+}
+
+.app-mark {
+    -fx-alignment: center;
+    -fx-background-color: #111827;
+    -fx-background-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+    -fx-pref-height: 36;
+    -fx-pref-width: 36;
+    -fx-text-fill: #ffffff;
+}
+
+.app-title { -fx-font-size: 17px; -fx-font-weight: 700; -fx-text-fill: #111827; }
+.app-subtitle { -fx-font-size: 12px; -fx-text-fill: #64748b; }
+
+.conversation-scroll { -fx-background: #f8fafc; -fx-background-color: transparent; -fx-border-color: transparent; }
+.conversation { -fx-padding: 24; -fx-pref-width: 680; }
+
+.message-bubble {
+    -fx-background-radius: 14;
+    -fx-font-size: 13px;
+    -fx-line-spacing: 2px;
+    -fx-max-width: 460;
+    -fx-padding: 10 14;
+}
+
+.user-message { -fx-background-color: #111827; -fx-text-fill: #ffffff; }
+.jaku-message { -fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-radius: 14; -fx-text-fill: #1e293b; }
+
+.composer { -fx-background-color: #ffffff; -fx-border-color: #e2e8f0 transparent transparent transparent; }
+.command-input { -fx-background-color: #f8fafc; -fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8; -fx-font-size: 13px; -fx-padding: 9 12; }
+.command-input:focused { -fx-border-color: #2563eb; -fx-effect: dropshadow(gaussian, rgba(37, 99, 235, 0.18), 8, 0, 0, 0); }
+.send-button { -fx-background-color: #2563eb; -fx-background-radius: 8; -fx-font-weight: 700; -fx-text-fill: #ffffff; }
+.send-button:hover { -fx-background-color: #1d4ed8; }
