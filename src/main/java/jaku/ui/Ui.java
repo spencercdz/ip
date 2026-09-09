@@ -98,12 +98,7 @@ public class Ui {
             showResponse("Your list is empty for now.");
             return;
         }
-        List<String> lines = new ArrayList<>();
-        lines.add("Here are the tasks in your list:");
-        for (int i = 0; i < tasks.size(); i++) {
-            lines.add((i + 1) + "." + tasks.get(i));
-        }
-        showResponse(lines);
+        showNumberedTasks("Here are the tasks in your list:", tasks.asList());
     }
 
     /**
@@ -116,10 +111,20 @@ public class Ui {
             showResponse("No matching tasks found.");
             return;
         }
+        showNumberedTasks("Here are the matching tasks in your list:", matches);
+    }
+
+    /**
+     * Shows a heading followed by the supplied tasks numbered from one.
+     *
+     * @param heading introductory text for the task list
+     * @param tasks tasks to show in their current order
+     */
+    private void showNumberedTasks(String heading, List<Task> tasks) {
         List<String> lines = new ArrayList<>();
-        lines.add("Here are the matching tasks in your list:");
-        for (int i = 0; i < matches.size(); i++) {
-            lines.add((i + 1) + "." + matches.get(i));
+        lines.add(heading);
+        for (int i = 0; i < tasks.size(); i++) {
+            lines.add((i + 1) + "." + tasks.get(i));
         }
         showResponse(lines);
     }
