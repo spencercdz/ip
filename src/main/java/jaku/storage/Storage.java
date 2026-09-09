@@ -8,12 +8,16 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import jaku.JakuException;
 import jaku.task.Deadline;
 import jaku.task.Event;
+import jaku.task.Recurrence;
+import jaku.task.RecurringEvent;
+import jaku.task.RecurringTodo;
 import jaku.task.Task;
 import jaku.task.Todo;
 
@@ -115,6 +119,15 @@ public class Storage {
      */
     private String formatTask(Task task) {
         String status = task.isDone() ? "1" : "0";
+        if (task instanceof RecurringTodo recurringTodo) {
+            return String.join("\t", "RT", status, escape(task.getDescription()),
+                    recurringTodo.getNextOccurrence().toString(), recurringTodo.getRecurrence().getLabel());
+        }
+        if (task instanceof RecurringEvent recurringEvent) {
+            return String.join("\t", "RE", status, escape(task.getDescription()),
+                    recurringEvent.getFrom().toString(), recurringEvent.getTo().toString(),
+                    recurringEvent.getRecurrence().getLabel());
+        }
         if (task instanceof Todo) {
             return String.join("\t", "T", status, escape(task.getDescription()));
         }
@@ -146,9 +159,18 @@ public class Storage {
             case "E" -> fields.length == 5
                     ? new Event(unescape(fields[2]), unescape(fields[3]), unescape(fields[4]))
                     : null;
+            case "RT" -> fields.length == 5
+                    ? new RecurringTodo(unescape(fields[2]), LocalDate.parse(fields[3]),
+                    Recurrence.fromLabel(fields[4]))
+                    : null;
+            case "RE" -> fields.length == 6
+                    ? new RecurringEvent(unescape(fields[2]), LocalDateTime.parse(fields[3]),
+                    LocalDateTime.parse(fields[4]), Recurrence.fromLabel(fields[5]))
+                    : null;
             default -> null;
             };
-            if (task != null && fields[1].equals("1")) {
+            if (task != null && fields[1].equals("1")
+                    && !(task instanceof RecurringTodo) && !(task instanceof RecurringEvent)) {
                 task.markAsDone();
             }
             return task;

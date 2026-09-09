@@ -2,6 +2,8 @@ package jaku;
 
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
@@ -10,6 +12,9 @@ import jaku.parser.Parser;
 import jaku.storage.Storage;
 import jaku.task.Deadline;
 import jaku.task.Event;
+import jaku.task.Recurrence;
+import jaku.task.RecurringEvent;
+import jaku.task.RecurringTodo;
 import jaku.task.Task;
 import jaku.task.TaskList;
 import jaku.task.Todo;
@@ -30,6 +35,21 @@ public class Jaku {
 
     /** Marker between an event's start and end dates or times. */
     private static final String TO_SEPARATOR = "/to";
+
+    /** Marker between a recurring task's start and recurrence interval. */
+    private static final String EVERY_SEPARATOR = "/every";
+
+    /** Formatter accepted for recurring event date-times. */
+    private static final DateTimeFormatter RECURRING_EVENT_DATE_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /** Usage text for creating recurring todos. */
+    private static final String RECURRING_TODO_USAGE =
+            "Use: repeat todo <description> /from yyyy-MM-dd /every daily|weekly.";
+
+    /** Usage text for creating recurring events. */
+    private static final String RECURRING_EVENT_USAGE =
+            "Use: repeat event <description> /from yyyy-MM-dd HH:mm /to yyyy-MM-dd HH:mm /every daily|weekly.";
 
     /** Saves and loads Jaku's tasks. */
     private final Storage storage;
@@ -168,6 +188,9 @@ public class Jaku {
         case FIND:
             findTasks(input);
             break;
+        case REPEAT:
+            addRecurringTask(input);
+            break;
         case BYE:
         case UNKNOWN:
             throw unknownCommandException();
@@ -183,7 +206,8 @@ public class Jaku {
      */
     private JakuException unknownCommandException() {
         return new JakuException(
-                "I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye."
+                "I don't recognize that command. Try todo, deadline, event, repeat, list, mark, unmark, delete, find,"
+                        + " or bye."
         );
     }
 
@@ -265,6 +289,83 @@ public class Jaku {
     }
 
     /**
+     * Creates a recurring todo or event from a {@code repeat} command.
+     *
+     * @param input a repeat command followed by a task type and recurrence details
+     * @throws JakuException if the task type or recurring schedule is invalid
+     */
+    private void addRecurringTask(String input) throws JakuException {
+        String arguments = Parser.getArguments(input, Command.REPEAT);
+        Command taskType = Parser.parseCommand(arguments);
+        if (taskType == Command.TODO) {
+            addRecurringTodo(Parser.getArguments(arguments, taskType));
+            return;
+        }
+        if (taskType == Command.EVENT) {
+            addRecurringEvent(Parser.getArguments(arguments, taskType));
+            return;
+        }
+        throw new JakuException("Use: repeat todo ... or repeat event ...");
+    }
+
+    /**
+     * Creates a recurring todo from its details after the {@code todo} keyword.
+     *
+     * @param arguments todo description, first date, and recurrence interval
+     * @throws JakuException if the recurring todo details are invalid
+     */
+    private void addRecurringTodo(String arguments) throws JakuException {
+        int fromIndex = arguments.indexOf(FROM_SEPARATOR);
+        int everyIndex = arguments.indexOf(EVERY_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
+        if (fromIndex < 0 || everyIndex < 0) {
+            throw new JakuException(RECURRING_TODO_USAGE);
+        }
+        String description = arguments.substring(0, fromIndex).trim();
+        String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), everyIndex).trim();
+        String recurrence = arguments.substring(everyIndex + EVERY_SEPARATOR.length()).trim();
+        if (description.isEmpty() || from.isEmpty() || recurrence.isEmpty()) {
+            throw new JakuException(RECURRING_TODO_USAGE);
+        }
+        try {
+            addTask(new RecurringTodo(description, LocalDate.parse(from), Recurrence.fromLabel(recurrence)));
+        } catch (DateTimeParseException | IllegalArgumentException exception) {
+            throw new JakuException(RECURRING_TODO_USAGE);
+        }
+    }
+
+    /**
+     * Creates a recurring event from its details after the {@code event} keyword.
+     *
+     * @param arguments event description, date-times, and recurrence interval
+     * @throws JakuException if the recurring event details are invalid
+     */
+    private void addRecurringEvent(String arguments) throws JakuException {
+        int fromIndex = arguments.indexOf(FROM_SEPARATOR);
+        int toIndex = arguments.indexOf(TO_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
+        int everyIndex = arguments.indexOf(EVERY_SEPARATOR, toIndex + TO_SEPARATOR.length());
+        if (fromIndex < 0 || toIndex < 0 || everyIndex < 0) {
+            throw new JakuException(RECURRING_EVENT_USAGE);
+        }
+        String description = arguments.substring(0, fromIndex).trim();
+        String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), toIndex).trim();
+        String to = arguments.substring(toIndex + TO_SEPARATOR.length(), everyIndex).trim();
+        String recurrence = arguments.substring(everyIndex + EVERY_SEPARATOR.length()).trim();
+        if (description.isEmpty() || from.isEmpty() || to.isEmpty() || recurrence.isEmpty()) {
+            throw new JakuException(RECURRING_EVENT_USAGE);
+        }
+        try {
+            LocalDateTime start = LocalDateTime.parse(from, RECURRING_EVENT_DATE_TIME_FORMAT);
+            LocalDateTime end = LocalDateTime.parse(to, RECURRING_EVENT_DATE_TIME_FORMAT);
+            if (!end.isAfter(start)) {
+                throw new JakuException("A recurring event must end after it starts.");
+            }
+            addTask(new RecurringEvent(description, start, end, Recurrence.fromLabel(recurrence)));
+        } catch (DateTimeParseException | IllegalArgumentException exception) {
+            throw new JakuException(RECURRING_EVENT_USAGE);
+        }
+    }
+
+    /**
      * Stores a new task and confirms its addition and the updated task count.
      *
      * @param task the task to remember
@@ -300,6 +401,18 @@ public class Jaku {
         assert taskIndex >= 0 && taskIndex < tasks.size()
                 : "A validated task number must identify an existing task.";
         Task task = tasks.get(taskIndex);
+        if (task instanceof RecurringTodo recurringTodo) {
+            recurringTodo.advanceOccurrence();
+            saveRecurringTaskUpdate(recurringTodo, true);
+            ui.showResponse("Nice! I've completed this occurrence. The next one is:", "  " + recurringTodo);
+            return;
+        }
+        if (task instanceof RecurringEvent recurringEvent) {
+            recurringEvent.advanceOccurrence();
+            saveRecurringTaskUpdate(recurringEvent, true);
+            ui.showResponse("Nice! I've completed this occurrence. The next one is:", "  " + recurringEvent);
+            return;
+        }
         boolean wasDone = task.isDone();
         task.markAsDone();
         try {
@@ -322,6 +435,18 @@ public class Jaku {
         assert taskIndex >= 0 && taskIndex < tasks.size()
                 : "A validated task number must identify an existing task.";
         Task task = tasks.get(taskIndex);
+        if (task instanceof RecurringTodo recurringTodo) {
+            recurringTodo.reverseOccurrence();
+            saveRecurringTaskUpdate(recurringTodo, false);
+            ui.showResponse("OK, I've restored the previous occurrence:", "  " + recurringTodo);
+            return;
+        }
+        if (task instanceof RecurringEvent recurringEvent) {
+            recurringEvent.reverseOccurrence();
+            saveRecurringTaskUpdate(recurringEvent, false);
+            ui.showResponse("OK, I've restored the previous occurrence:", "  " + recurringEvent);
+            return;
+        }
         boolean wasDone = task.isDone();
         task.markAsNotDone();
         try {
@@ -364,6 +489,46 @@ public class Jaku {
      */
     private void saveTasks() throws JakuException {
         storage.save(tasks.asList());
+    }
+
+    /**
+     * Saves a recurring-task date change, reversing it if persistence fails.
+     *
+     * @param task recurring todo whose occurrence was changed
+     * @param advanced whether the update advanced rather than reversed the occurrence
+     * @throws JakuException if the task list cannot be saved
+     */
+    private void saveRecurringTaskUpdate(RecurringTodo task, boolean advanced) throws JakuException {
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            if (advanced) {
+                task.reverseOccurrence();
+            } else {
+                task.advanceOccurrence();
+            }
+            throw exception;
+        }
+    }
+
+    /**
+     * Saves a recurring-event date change, reversing it if persistence fails.
+     *
+     * @param task recurring event whose occurrence was changed
+     * @param advanced whether the update advanced rather than reversed the occurrence
+     * @throws JakuException if the task list cannot be saved
+     */
+    private void saveRecurringTaskUpdate(RecurringEvent task, boolean advanced) throws JakuException {
+        try {
+            saveTasks();
+        } catch (JakuException exception) {
+            if (advanced) {
+                task.reverseOccurrence();
+            } else {
+                task.advanceOccurrence();
+            }
+            throw exception;
+        }
     }
 
     /**

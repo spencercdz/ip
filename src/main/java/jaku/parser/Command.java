@@ -13,6 +13,7 @@ public enum Command {
     EVENT("event"),
     DELETE("delete"),
     FIND("find"),
+    REPEAT("repeat"),
     UNKNOWN("");
 
     /** Text entered by the user to invoke this command. */
