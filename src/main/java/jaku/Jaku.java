@@ -272,9 +272,13 @@ public class Jaku {
      */
     private void addTask(Task task) throws JakuException {
         tasks.add(task);
+        assert tasks.get(tasks.size() - 1) == task
+                : "A newly added task must be the last task in the list.";
         try {
             saveTasks();
         } catch (JakuException exception) {
+            assert tasks.get(tasks.size() - 1) == task
+                    : "A failed save must not alter the task that needs to be rolled back.";
             tasks.remove(tasks.size() - 1);
             throw exception;
         }
@@ -293,6 +297,8 @@ public class Jaku {
      */
     private void markTask(String input) throws JakuException {
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.MARK));
+        assert taskIndex >= 0 && taskIndex < tasks.size()
+                : "A validated task number must identify an existing task.";
         Task task = tasks.get(taskIndex);
         boolean wasDone = task.isDone();
         task.markAsDone();
@@ -313,6 +319,8 @@ public class Jaku {
      */
     private void unmarkTask(String input) throws JakuException {
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.UNMARK));
+        assert taskIndex >= 0 && taskIndex < tasks.size()
+                : "A validated task number must identify an existing task.";
         Task task = tasks.get(taskIndex);
         boolean wasDone = task.isDone();
         task.markAsNotDone();
@@ -333,6 +341,8 @@ public class Jaku {
      */
     private void deleteTask(String input) throws JakuException {
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.DELETE));
+        assert taskIndex >= 0 && taskIndex < tasks.size()
+                : "A validated task number must identify an existing task.";
         Task removedTask = tasks.remove(taskIndex);
         try {
             saveTasks();
@@ -368,5 +378,7 @@ public class Jaku {
         } else {
             task.markAsNotDone();
         }
+        assert task.isDone() == wasDone
+                : "Restoring a task after a failed save must recover its original completion status.";
     }
 }
