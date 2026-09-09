@@ -17,6 +17,7 @@ class ParserTest {
         assertEquals(Command.TODO, Parser.parseCommand("ToDo read book"));
         assertEquals(Command.DELETE, Parser.parseCommand("DELETE 3"));
         assertEquals(Command.FIND, Parser.parseCommand("find book"));
+        assertEquals(Command.REPEAT, Parser.parseCommand("repeat todo read book /from 2026-09-10 /every daily"));
         assertEquals(Command.BYE, Parser.parseCommand("bye"));
     }
 

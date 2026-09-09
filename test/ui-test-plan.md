@@ -6,6 +6,137 @@ Each case is run in a fresh Jaku process. Output comparisons are exact, includin
 
 Aim: Verify the GUI shows its welcome message, sends a command with both Enter and Send, displays the command and response in order without console divider lines, scrolls to new dialogs, and closes after `bye`.
 
+## B-RecurringTasks-1 Manage daily and weekly occurrences
+
+Aim: Verify recurring todos and events are displayed, marking advances one interval, unmarking reverses one interval, and list preserves their changed occurrences.
+
+### Input
+
+```text
+repeat todo review notes /from 2026-09-10 /every daily
+repeat event project meeting /from 2026-09-10 14:00 /to 2026-09-10 15:00 /every weekly
+mark 1
+unmark 2
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [R][ ] review notes (every: daily, next: Sep 10 2026)
+Now you have 1 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Got it. I've added this task:
+  [R][ ] project meeting (every: weekly, from: Sep 10 2026 14:00 to: Sep 10 2026 15:00)
+Now you have 2 tasks in the list.
+____________________________________________________________
+____________________________________________________________
+Nice! I've completed this occurrence. The next one is:
+  [R][ ] review notes (every: daily, next: Sep 11 2026)
+____________________________________________________________
+____________________________________________________________
+OK, I've restored the previous occurrence:
+  [R][ ] project meeting (every: weekly, from: Sep 3 2026 14:00 to: Sep 3 2026 15:00)
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[R][ ] review notes (every: daily, next: Sep 11 2026)
+2.[R][ ] project meeting (every: weekly, from: Sep 3 2026 14:00 to: Sep 3 2026 15:00)
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## B-RecurringTasks-2 Reject malformed recurring schedules
+
+Aim: Verify invalid recurrence intervals and event ranges are rejected without adding tasks.
+
+### Input
+
+```text
+repeat todo review notes /from 2026-09-10 /every monthly
+repeat event meeting /from 2026-09-10 15:00 /to 2026-09-10 14:00 /every weekly
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Use: repeat todo <description> /from yyyy-MM-dd /every daily|weekly.
+____________________________________________________________
+____________________________________________________________
+A recurring event must end after it starts.
+____________________________________________________________
+____________________________________________________________
+Your list is empty for now.
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## B-RecurringTasks-3 Reload recurring task records
+
+Aim: Verify persisted recurring todo and event records are restored with their cadence and occurrence values.
+
+### Input
+
+```text
+list
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Here are the tasks in your list:
+1.[R][ ] review notes (every: daily, next: Sep 10 2026)
+2.[R][ ] project meeting (every: weekly, from: Sep 10 2026 14:00 to: Sep 10 2026 15:00)
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+### Initial data
+
+```text
+RT	0	review notes	2026-09-10	daily
+RE	0	project meeting	2026-09-10T14:00	2026-09-10T15:00	weekly
+```
+
 ## L4-1 Add and list every task type
 
 Aim: Verify todos, ISO deadline dates, multi-day events, confirmations, counts, and list formatting.
@@ -166,7 +297,7 @@ Got it. I've added this task:
 Now you have 1 tasks in the list.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
+I don't recognize that command. Try todo, deadline, event, repeat, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
@@ -319,10 +450,10 @@ OK, I've marked this task as not done yet:
   [T][ ] only task
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
+I don't recognize that command. Try todo, deadline, event, repeat, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
-I don't recognize that command. Try todo, deadline, event, list, mark, unmark, delete, find, or bye.
+I don't recognize that command. Try todo, deadline, event, repeat, list, mark, unmark, delete, find, or bye.
 ____________________________________________________________
 ____________________________________________________________
 Here are the tasks in your list:
