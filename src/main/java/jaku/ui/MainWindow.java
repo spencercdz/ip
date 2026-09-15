@@ -2,7 +2,6 @@ package jaku.ui;
 
 import jaku.CommandResult;
 import jaku.Jaku;
-import jaku.MessageKind;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.ScrollPane;
@@ -22,7 +21,8 @@ public class MainWindow {
     /** Injects Jaku's UI-independent command service. */
     public void setJaku(Jaku jaku) {
         this.jaku = jaku;
-        addDialog(DialogBox.reply("Hi, I'm Jaku. Let's make space for what matters.", MessageKind.REPLY));
+        addDialog(DialogBox.welcome("Hi, I'm Jaku. Let's make space for what matters.\n"
+                + "Start with todo, deadline, event, or repeat."));
         jaku.getStartupNotice().ifPresent(this::addJakuDialog);
     }
 

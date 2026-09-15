@@ -12,7 +12,7 @@ public class DialogBox extends HBox {
     private final Label label;
 
     private DialogBox(String text, boolean user, MessageKind messageKind) {
-        label = new Label(text);
+        label = new Label(formatText(text, messageKind));
         label.setWrapText(true);
         label.getStyleClass().add("message-bubble");
         label.getStyleClass().add(getMessageStyleClass(user, messageKind));
@@ -38,6 +38,18 @@ public class DialogBox extends HBox {
     }
 
     /**
+     * Creates Jaku's welcoming quick-start card.
+     *
+     * @param text welcome and command guidance
+     * @return styled welcome dialog
+     */
+    public static DialogBox welcome(String text) {
+        DialogBox dialog = new DialogBox(text, false, MessageKind.REPLY);
+        dialog.label.getStyleClass().add("welcome-message");
+        return dialog;
+    }
+
+    /**
      * Binds this dialog's bubble to a responsive maximum width.
      *
      * @param maximumWidth maximum bubble width within the conversation pane
@@ -52,5 +64,13 @@ public class DialogBox extends HBox {
             return "user-message";
         }
         return messageKind == MessageKind.ERROR ? "error-message" : "jaku-message";
+    }
+
+    /** Adds an explicit text cue to error dialogs as well as their visual treatment. */
+    private String formatText(String text, MessageKind messageKind) {
+        if (messageKind == MessageKind.ERROR) {
+            return "Action needed\n" + text;
+        }
+        return text;
     }
 }
