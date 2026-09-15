@@ -57,7 +57,7 @@ java -cp build/classes/java/main jaku.Jaku
 
 ## How Jaku works
 
-Jaku remembers a numbered list of tasks. Add a task first, then use the number shown by `list` or `find` with commands such as `mark`, `unmark`, and `delete`.
+Jaku remembers a numbered list of tasks. Add a task first, then use the number shown by `list` with commands such as `mark`, `unmark`, and `delete`.
 
 Commands are **case-insensitive**, so `TODO buy milk` and `todo buy milk` work the same way. Leading and trailing spaces are ignored. Parameter markers, such as `/by` and `/from`, must be separate words exactly as shown in the examples.
 
@@ -134,7 +134,7 @@ find REVIEW
 
 #### Complete a task: `mark NUMBER`
 
-Use the number displayed by `list` or `find`.
+Use the number displayed by `list`. `find` is for locating descriptions; run `list` when you need a task number for a change.
 
 ```text
 mark 2
