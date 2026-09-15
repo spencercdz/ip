@@ -1,6 +1,7 @@
 package jaku.task;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,5 +36,13 @@ class RecurringTaskTest {
         task.reverseOccurrence();
         assertEquals(start, task.getFrom());
         assertEquals(end, task.getTo());
+    }
+
+    /** Verifies recurrence labels ignore case and unsupported labels remain invalid. */
+    @Test
+    void recurrenceFromLabel_handlesCaseAndUnsupportedValues() {
+        assertEquals(Recurrence.DAILY, Recurrence.fromLabel("DAILY"));
+        assertEquals(Recurrence.WEEKLY, Recurrence.fromLabel("weekly"));
+        assertThrows(IllegalArgumentException.class, () -> Recurrence.fromLabel("monthly"));
     }
 }
