@@ -7,7 +7,11 @@ public final class Launcher {
     private Launcher() {
     }
 
-    /** Launches the graphical interface. */
+    /**
+     * Launches the graphical interface.
+     *
+     * @param args command-line arguments, which the launcher does not use
+     */
     public static void main(String[] args) {
         Application.launch(Main.class, args);
     }

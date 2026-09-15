@@ -10,6 +10,10 @@ import javafx.stage.Stage;
 
 /** JavaFX entry point for Jaku. */
 public class Main extends Application {
+    /** Creates the JavaFX application entry point. */
+    public Main() {
+    }
+
     /** Creates and displays Jaku's chat window. */
     @Override
     public void start(Stage stage) {

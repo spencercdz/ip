@@ -3,16 +3,22 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
 <BorderPane prefHeight="620.0" prefWidth="680.0" styleClass="app-shell" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="jaku.ui.MainWindow">
   <top>
     <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="app-header">
-      <Label styleClass="app-mark" text="J" />
+      <ImageView accessibleText="Jaku avatar" fitHeight="32.0" fitWidth="32.0" preserveRatio="true" styleClass="app-avatar">
+        <image><Image url="@/images/jaku.png" /></image>
+        <clip><Circle centerX="16.0" centerY="16.0" radius="16.0" /></clip>
+      </ImageView>
       <VBox spacing="1.0">
         <Label styleClass="app-title" text="Jaku" />
         <Label styleClass="app-subtitle" text="Calm task companion" />

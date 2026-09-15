@@ -10,15 +10,8 @@
     -fx-padding: 14 24 10;
 }
 
-.app-mark {
-    -fx-alignment: center;
-    -fx-background-color: #4f46e5;
-    -fx-background-radius: 9;
-    -fx-font-size: 15px;
-    -fx-font-weight: 800;
-    -fx-pref-height: 32;
-    -fx-pref-width: 32;
-    -fx-text-fill: #ffffff;
+.app-avatar {
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 6, 0, 0, 2);
 }
 
 .app-title { -fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: #0f172a; }

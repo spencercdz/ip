@@ -4,7 +4,7 @@ Each case is run in a fresh Jaku process. Output comparisons are exact, includin
 
 ## L10-1 JavaFX command flow (manual)
 
-Aim: Verify the GUI presents Jaku's quiet indigo app shell, quick-start welcome card, asymmetric messages, explicit error card, responsive conversation surface, and inset composer; verify Enter/Send equivalence, scrolling, focus restoration, minimum and expanded window widths, and exit after `bye`.
+Aim: Verify the GUI presents Jaku's circular header avatar, quiet indigo app shell, quick-start welcome card, asymmetric messages, explicit error card, responsive conversation surface, and inset composer; verify Enter/Send equivalence, scrolling, focus restoration, minimum and expanded window widths, and exit after `bye`.
 
 ## B-RecurringTasks-1 Manage daily and weekly occurrences
 

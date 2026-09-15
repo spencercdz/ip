@@ -145,14 +145,22 @@ public class Ui {
         capturedOutput = new StringBuilder();
     }
 
-    /** Stops capturing and returns the captured response. */
+    /**
+     * Stops capturing and returns the captured response.
+     *
+     * @return response generated while capture was active
+     */
     public String stopCapturing() {
         String output = capturedOutput.toString();
         capturedOutput = null;
         return output.stripTrailing();
     }
 
-    /** Prints one complete response without adding another response frame. */
+    /**
+     * Prints one complete response without adding another response frame.
+     *
+     * @param response already framed response to print
+     */
     public void showRaw(String response) {
         if (!response.isEmpty()) {
             System.out.println(response);

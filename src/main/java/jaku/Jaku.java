@@ -179,7 +179,11 @@ public class Jaku {
         return new CommandResult(ui.stopCapturing(), MessageKind.REPLY);
     }
 
-    /** Returns whether the last command requested application exit. */
+    /**
+     * Returns whether the last command requested application exit.
+     *
+     * @return true after a valid {@code bye} command
+     */
     public boolean isExitRequested() {
         return exitRequested;
     }

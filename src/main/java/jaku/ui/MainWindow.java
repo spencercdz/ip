@@ -18,7 +18,15 @@ public class MainWindow {
     @FXML private TextField userInput;
     private Jaku jaku;
 
-    /** Injects Jaku's UI-independent command service. */
+    /** Creates the FXML controller for Jaku's main window. */
+    public MainWindow() {
+    }
+
+    /**
+     * Injects Jaku's UI-independent command service.
+     *
+     * @param jaku service that processes GUI commands
+     */
     public void setJaku(Jaku jaku) {
         this.jaku = jaku;
         addDialog(DialogBox.welcome("Hi, I'm Jaku. Let's make space for what matters.\n"

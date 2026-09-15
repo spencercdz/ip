@@ -21,7 +21,12 @@ public class DialogBox extends HBox {
         getChildren().add(label);
     }
 
-    /** Creates a dialog containing a user command. */
+    /**
+     * Creates a dialog containing a user command.
+     *
+     * @param text command text entered by the user
+     * @return right-aligned user dialog
+     */
     public static DialogBox user(String text) {
         return new DialogBox(text, true, MessageKind.REPLY);
     }
