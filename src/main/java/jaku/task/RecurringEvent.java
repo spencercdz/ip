@@ -34,17 +34,29 @@ public class RecurringEvent extends Task {
         this.recurrence = recurrence;
     }
 
-    /** Returns the interval between occurrences. */
+    /**
+     * Returns the interval between occurrences.
+     *
+     * @return this event's recurrence interval
+     */
     public Recurrence getRecurrence() {
         return recurrence;
     }
 
-    /** Returns the start of the current occurrence. */
+    /**
+     * Returns the start of the current occurrence.
+     *
+     * @return current occurrence start date-time
+     */
     public LocalDateTime getFrom() {
         return from;
     }
 
-    /** Returns the end of the current occurrence. */
+    /**
+     * Returns the end of the current occurrence.
+     *
+     * @return current occurrence end date-time
+     */
     public LocalDateTime getTo() {
         return to;
     }

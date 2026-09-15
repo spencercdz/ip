@@ -29,12 +29,20 @@ public class RecurringTodo extends Task {
         this.recurrence = recurrence;
     }
 
-    /** Returns the interval between occurrences. */
+    /**
+     * Returns the interval between occurrences.
+     *
+     * @return this task's recurrence interval
+     */
     public Recurrence getRecurrence() {
         return recurrence;
     }
 
-    /** Returns the date of the current occurrence. */
+    /**
+     * Returns the date of the current occurrence.
+     *
+     * @return next scheduled occurrence date
+     */
     public LocalDate getNextOccurrence() {
         return nextOccurrence;
     }
