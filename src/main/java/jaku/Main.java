@@ -20,7 +20,7 @@ public class Main extends Application {
             Scene scene = new Scene(root);
             scene.getStylesheets().add(Main.class.getResource("/css/main.css").toExternalForm());
             stage.setScene(scene);
-            stage.setTitle("Jaku");
+            stage.setTitle("Jaku — Calm task companion");
             stage.setMinHeight(520.0);
             stage.setMinWidth(540.0);
             stage.setHeight(680.0);

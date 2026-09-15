@@ -13,7 +13,7 @@
       <Label styleClass="app-mark" text="J" />
       <VBox spacing="2.0">
         <Label styleClass="app-title" text="Jaku" />
-        <Label styleClass="app-subtitle" text="Your focused task companion" />
+        <Label styleClass="app-subtitle" text="Plan calmly. Move clearly." />
       </VBox>
     </HBox>
   </top>
