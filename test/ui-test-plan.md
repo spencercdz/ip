@@ -659,9 +659,9 @@ D	1	return book	2026-09-01
 E	0	meeting	2pm	4pm
 ```
 
-## L7-2 Load valid records and skip corrupt records
+## L7-2 Load valid records
 
-Aim: Verify a later Jaku process restores valid task types and completion state while silently skipping malformed data.
+Aim: Verify a later Jaku process restores valid task types and completion state.
 
 ### Input
 
@@ -698,16 +698,11 @@ ____________________________________________________________
 T	0	read book
 D	1	return book	2026-09-01
 E	0	meeting	2pm	4pm
-Q	0	unknown type
-D	2	invalid status	Monday
-E	0	missing fields
-T	0	bad\qescape
-D	0	legacy deadline	Sunday
 ```
 
-## L7-3 Keep running when persistence fails
+## L7-3 Protect data after a persistence failure
 
-Aim: Verify a read or write failure produces a framed error and does not add an unsaved task to memory.
+Aim: Verify an unreadable data location enters recovery mode and prevents mutations.
 
 ### Input
 
@@ -721,9 +716,6 @@ bye
 
 ```text
 ____________________________________________________________
-I couldn't load your saved tasks.
-____________________________________________________________
-____________________________________________________________
      _     _     _  __ _   _␠
     | |   / \   | |/ /| | | |
  _  | |  / _ \  | ' / | | | |
@@ -733,7 +725,10 @@ Hello there! I'm Jaku.
 How can I help you today?
 ____________________________________________________________
 ____________________________________________________________
-I couldn't save your tasks.
+Jaku couldn't read your saved tasks. Your saved file was left untouched. Repair it, then restart Jaku.
+____________________________________________________________
+____________________________________________________________
+Jaku is in recovery mode and cannot change tasks until you repair the saved file and restart.
 ____________________________________________________________
 ____________________________________________________________
 Your list is empty for now.
@@ -866,4 +861,91 @@ I need a keyword after "find".
 ____________________________________________________________
 Bye for now. Hope to see you again soon!
 ____________________________________________________________
+```
+
+## A-MoreErrorHandling-1 Reject repeated and misordered parameters
+
+Aim: Verify parameter markers must appear once and in the documented order without creating tasks.
+
+### Input
+
+```text
+deadline submit /by 2026-09-20 /by 2026-09-21
+event talk /to 3pm /from 2pm
+repeat todo review /every daily /from 2026-09-20
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Use: deadline <description> /by <date or time>.
+____________________________________________________________
+____________________________________________________________
+Use: event <description> /from <start> /to <end>.
+____________________________________________________________
+____________________________________________________________
+Use: repeat todo <description> /from yyyy-MM-dd /every daily|weekly.
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+## A-MoreErrorHandling-2 Preserve unreadable saved data
+
+Aim: Verify an invalid saved record starts Jaku in recovery mode and a mutation cannot overwrite the original file.
+
+### Input
+
+```text
+list
+todo cannot save
+bye
+```
+
+### Expected output
+
+```text
+____________________________________________________________
+     _     _     _  __ _   _␠
+    | |   / \   | |/ /| | | |
+ _  | |  / _ \  | ' / | | | |
+| |_| | / ___ \ | . \ | |_| |
+ \___/ /_/   \_\|_|\_\ \___/␠
+Hello there! I'm Jaku.
+How can I help you today?
+____________________________________________________________
+____________________________________________________________
+Jaku couldn't read your saved tasks. Your saved file was left untouched. Repair it, then restart Jaku.
+____________________________________________________________
+____________________________________________________________
+Your list is empty for now.
+____________________________________________________________
+____________________________________________________________
+Jaku is in recovery mode and cannot change tasks until you repair the saved file and restart.
+____________________________________________________________
+Bye for now. Hope to see you again soon!
+____________________________________________________________
+```
+
+### Initial data
+
+```text
+INVALID
+```
+
+### Expected saved data
+
+```text
+INVALID
 ```

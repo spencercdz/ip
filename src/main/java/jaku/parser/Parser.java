@@ -48,8 +48,12 @@ public class Parser {
      * @throws JakuException if the number is missing or nonnumeric
      */
     public static int parseTaskNumber(String input, Command command) throws JakuException {
+        String arguments = getArguments(input, command);
+        if (!arguments.matches("[+-]?[0-9]+")) {
+            throw new JakuException("Use: " + command.getKeyword() + " <task number>.");
+        }
         try {
-            return Integer.parseInt(getArguments(input, command));
+            return Integer.parseInt(arguments);
         } catch (NumberFormatException exception) {
             throw new JakuException("Use: " + command.getKeyword() + " <task number>.");
         }

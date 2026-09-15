@@ -51,9 +51,10 @@ public class Storage {
             List<Task> tasks = new ArrayList<>();
             for (String line : Files.readAllLines(dataFile, StandardCharsets.UTF_8)) {
                 Task task = parseTask(line);
-                if (task != null) {
-                    tasks.add(task);
+                if (task == null) {
+                    throw new JakuException("The saved data contains an invalid task record.");
                 }
+                tasks.add(task);
             }
             return tasks;
         } catch (IOException exception) {
