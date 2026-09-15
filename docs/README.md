@@ -1,6 +1,6 @@
 # Jaku User Guide
 
-Jaku is a desktop task chatbot. Run `./gradlew run` to open its JavaFX chat window, type a command, and press Enter or Send. The command-line entry point remains available as `jaku.Jaku` for automated regression testing.
+Jaku is a calm desktop task companion. Run `./gradlew run` to open its JavaFX chat window, type a command, and press Enter or Send. The command-line entry point remains available as `jaku.Jaku` for automated regression testing.
 
 ## Adding deadlines
 
@@ -21,3 +21,7 @@ Create a daily or weekly task with `repeat todo DESCRIPTION /from yyyy-MM-dd /ev
 Create a recurring event with `repeat event DESCRIPTION /from yyyy-MM-dd HH:mm /to yyyy-MM-dd HH:mm /every daily|weekly`. Its end must be after its start.
 
 Marking a recurring task advances it by one interval. Unmarking it reverses it by one interval. Jaku saves the current occurrence automatically.
+
+## Saved-data recovery
+
+If Jaku cannot safely read its saved-task file, it starts in recovery mode and leaves that file unchanged. You can still inspect the empty session, but Jaku blocks task changes until you repair or replace the saved file and restart the app.

@@ -22,7 +22,7 @@ public class MainWindow {
     /** Injects Jaku's UI-independent command service. */
     public void setJaku(Jaku jaku) {
         this.jaku = jaku;
-        addDialog(DialogBox.reply("Welcome back! What would you like to plan today?", MessageKind.REPLY));
+        addDialog(DialogBox.reply("Hi, I'm Jaku. Let's make space for what matters.", MessageKind.REPLY));
         jaku.getStartupNotice().ifPresent(this::addJakuDialog);
     }
 
