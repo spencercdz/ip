@@ -47,4 +47,14 @@ class ParserTest {
                 () -> Parser.parseTaskNumber("unmark second", Command.UNMARK));
         assertEquals("Use: unmark <task number>.", nonnumericNumber.getMessage());
     }
+
+    /** Verifies signed and overflowing task numbers are handled without parser crashes. */
+    @Test
+    void parseTaskNumber_handlesSignedAndOverflowingNumbers() throws JakuException {
+        assertEquals(-1, Parser.parseTaskNumber("delete -1", Command.DELETE));
+
+        JakuException overflowingNumber = assertThrows(JakuException.class,
+                () -> Parser.parseTaskNumber("mark 999999999999999999999", Command.MARK));
+        assertEquals("Use: mark <task number>.", overflowingNumber.getMessage());
+    }
 }
