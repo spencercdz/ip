@@ -21,8 +21,10 @@ public class Main extends Application {
             scene.getStylesheets().add(Main.class.getResource("/css/main.css").toExternalForm());
             stage.setScene(scene);
             stage.setTitle("Jaku");
-            stage.setMinHeight(620.0);
-            stage.setMinWidth(680.0);
+            stage.setMinHeight(520.0);
+            stage.setMinWidth(540.0);
+            stage.setHeight(680.0);
+            stage.setWidth(760.0);
             stage.show();
         } catch (IOException exception) {
             throw new IllegalStateException("Unable to load Jaku's main window.", exception);

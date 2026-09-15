@@ -1,6 +1,8 @@
 package jaku.ui;
 
+import jaku.CommandResult;
 import jaku.Jaku;
+import jaku.MessageKind;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.ScrollPane;
@@ -20,15 +22,15 @@ public class MainWindow {
     /** Injects Jaku's UI-independent command service. */
     public void setJaku(Jaku jaku) {
         this.jaku = jaku;
-        dialogContainer.getChildren().add(DialogBox.reply("Welcome back! What would you like to plan today?"));
-        jaku.getStartupNotice().ifPresent(notice ->
-                dialogContainer.getChildren().add(DialogBox.reply(formatForGui(notice.text()))));
+        addDialog(DialogBox.reply("Welcome back! What would you like to plan today?", MessageKind.REPLY));
+        jaku.getStartupNotice().ifPresent(this::addJakuDialog);
     }
 
     /** Scrolls new messages into view. */
     @FXML
     public void initialize() {
         scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
+        Platform.runLater(userInput::requestFocus);
     }
 
     /** Sends the text-field command and shows Jaku's response. */
@@ -38,9 +40,10 @@ public class MainWindow {
         if (input.isEmpty()) {
             return;
         }
-        dialogContainer.getChildren().add(DialogBox.user(input));
-        dialogContainer.getChildren().add(DialogBox.reply(formatForGui(jaku.getResponse(input))));
+        addDialog(DialogBox.user(input));
+        addJakuDialog(jaku.processCommand(input));
         userInput.clear();
+        userInput.requestFocus();
         if (jaku.isExitRequested()) {
             Platform.runLater(Platform::exit);
         }
@@ -54,5 +57,16 @@ public class MainWindow {
      */
     private String formatForGui(String response) {
         return response.replaceAll(RESPONSE_DIVIDER, "").strip();
+    }
+
+    /** Adds a Jaku response with its semantic message styling. */
+    private void addJakuDialog(CommandResult result) {
+        addDialog(DialogBox.reply(formatForGui(result.text()), result.kind()));
+    }
+
+    /** Adds a dialog whose bubble adapts to the available conversation width. */
+    private void addDialog(DialogBox dialog) {
+        dialog.bindMaximumBubbleWidth(scrollPane.widthProperty().subtract(88.0).multiply(0.72));
+        dialogContainer.getChildren().add(dialog);
     }
 }
