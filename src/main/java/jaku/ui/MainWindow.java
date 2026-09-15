@@ -21,6 +21,8 @@ public class MainWindow {
     public void setJaku(Jaku jaku) {
         this.jaku = jaku;
         dialogContainer.getChildren().add(DialogBox.reply("Welcome back! What would you like to plan today?"));
+        jaku.getStartupNotice().ifPresent(notice ->
+                dialogContainer.getChildren().add(DialogBox.reply(formatForGui(notice.text()))));
     }
 
     /** Scrolls new messages into view. */

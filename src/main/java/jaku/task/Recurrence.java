@@ -2,6 +2,7 @@ package jaku.task;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 /** Describes the interval between consecutive occurrences of a recurring task. */
 public enum Recurrence {
@@ -33,8 +34,9 @@ public enum Recurrence {
      * @throws IllegalArgumentException if the interval is unsupported
      */
     public static Recurrence fromLabel(String text) {
+        String normalizedText = text.toLowerCase(Locale.ROOT);
         for (Recurrence recurrence : values()) {
-            if (recurrence.label.equals(text)) {
+            if (recurrence.label.equals(normalizedText)) {
                 return recurrence;
             }
         }

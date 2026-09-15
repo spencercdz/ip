@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jaku.parser.Command;
 import jaku.parser.Parser;
@@ -51,6 +54,14 @@ public class Jaku {
     private static final String RECURRING_EVENT_USAGE =
             "Use: repeat event <description> /from yyyy-MM-dd HH:mm /to yyyy-MM-dd HH:mm /every daily|weekly.";
 
+    /** Message shown when saved tasks cannot be loaded without risking data loss. */
+    private static final String RECOVERY_NOTICE =
+            "Jaku couldn't read your saved tasks. Your saved file was left untouched. Repair it, then restart Jaku.";
+
+    /** Message shown when a command would write while Jaku is in recovery mode. */
+    private static final String RECOVERY_MODE_MESSAGE =
+            "Jaku is in recovery mode and cannot change tasks until you repair the saved file and restart.";
+
     /** Saves and loads Jaku's tasks. */
     private final Storage storage;
 
@@ -59,6 +70,12 @@ public class Jaku {
 
     /** Reads user commands and displays Jaku's replies. */
     private final Ui ui;
+
+    /** Whether saved tasks loaded successfully and may safely be replaced. */
+    private final boolean canSaveTasks;
+
+    /** Error to show once at startup when Jaku protects an unreadable task file. */
+    private final String startupNotice;
 
     /** Whether the last command requested application exit. */
     private boolean exitRequested;
@@ -76,7 +93,10 @@ public class Jaku {
     public Jaku(Storage storage) {
         this.storage = storage;
         this.ui = new Ui();
-        this.tasks = loadTasks();
+        LoadedTasks loadedTasks = loadTasks();
+        this.tasks = loadedTasks.tasks();
+        this.canSaveTasks = loadedTasks.canSaveTasks();
+        this.startupNotice = loadedTasks.startupNotice();
     }
 
     /**
@@ -91,6 +111,7 @@ public class Jaku {
     /** Runs one chat session, from greeting to farewell. */
     private void run() {
         ui.showWelcome();
+        getStartupNotice().ifPresent(notice -> ui.showResponse(notice.text()));
         readCommandsUntilBye();
         if (!exitRequested) {
             ui.showGoodbye();
@@ -102,12 +123,11 @@ public class Jaku {
      *
      * @return loaded tasks, or an empty list when loading fails
      */
-    private TaskList loadTasks() {
+    private LoadedTasks loadTasks() {
         try {
-            return new TaskList(storage.load());
+            return new LoadedTasks(new TaskList(storage.load()), true, null);
         } catch (JakuException exception) {
-            ui.showResponse(exception.getMessage());
-            return new TaskList();
+            return new LoadedTasks(new TaskList(), false, RECOVERY_NOTICE);
         }
     }
 
@@ -129,27 +149,51 @@ public class Jaku {
      * @return formatted response, or an empty string for blank input
      */
     public String getResponse(String input) {
-        if (input.isEmpty()) {
-            return "";
+        return processCommand(input).text();
+    }
+
+    /**
+     * Processes one command and returns its text together with its presentation category.
+     *
+     * @param input command entered by the user
+     * @return formatted response and whether it represents an error
+     */
+    public CommandResult processCommand(String input) {
+        String normalizedInput = input.trim();
+        if (normalizedInput.isEmpty()) {
+            return new CommandResult("", MessageKind.REPLY);
         }
         ui.startCapturing();
-        Command command = Parser.parseCommand(input);
-        if (command == Command.BYE && Parser.getArguments(input, command).isEmpty()) {
+        Command command = Parser.parseCommand(normalizedInput);
+        if (command == Command.BYE && Parser.getArguments(normalizedInput, command).isEmpty()) {
             exitRequested = true;
             ui.showGoodbye();
-            return ui.stopCapturing();
+            return new CommandResult(ui.stopCapturing(), MessageKind.REPLY);
         }
         try {
-            handleCommand(command, input);
+            handleCommand(command, normalizedInput);
         } catch (JakuException exception) {
             ui.showResponse(exception.getMessage());
+            return new CommandResult(ui.stopCapturing(), MessageKind.ERROR);
         }
-        return ui.stopCapturing();
+        return new CommandResult(ui.stopCapturing(), MessageKind.REPLY);
     }
 
     /** Returns whether the last command requested application exit. */
     public boolean isExitRequested() {
         return exitRequested;
+    }
+
+    /**
+     * Returns the startup recovery warning when saved tasks could not be loaded.
+     *
+     * @return recovery warning for the active UI, if one is needed
+     */
+    public Optional<CommandResult> getStartupNotice() {
+        if (startupNotice == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new CommandResult(startupNotice, MessageKind.ERROR));
     }
 
     /**
@@ -247,10 +291,8 @@ public class Jaku {
      */
     private void addDeadline(String input) throws JakuException {
         String arguments = Parser.getArguments(input, Command.DEADLINE);
-        int separatorIndex = arguments.indexOf(BY_SEPARATOR);
-        if (separatorIndex < 0) {
-            throw new JakuException("Use: deadline <description> /by <date or time>.");
-        }
+        int separatorIndex = findSingleMarker(arguments, BY_SEPARATOR,
+                "Use: deadline <description> /by <date or time>.");
         String description = arguments.substring(0, separatorIndex).trim();
         String by = arguments.substring(separatorIndex + BY_SEPARATOR.length()).trim();
         if (description.isEmpty() || by.isEmpty()) {
@@ -271,13 +313,11 @@ public class Jaku {
      */
     private void addEvent(String input) throws JakuException {
         String arguments = Parser.getArguments(input, Command.EVENT);
-        int fromIndex = arguments.indexOf(FROM_SEPARATOR);
-        if (fromIndex < 0) {
-            throw new JakuException("Use: event <description> /from <start> /to <end>.");
-        }
-        int toIndex = arguments.indexOf(TO_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
-        if (toIndex < 0) {
-            throw new JakuException("Use: event <description> /from <start> /to <end>.");
+        String usage = "Use: event <description> /from <start> /to <end>.";
+        int fromIndex = findSingleMarker(arguments, FROM_SEPARATOR, usage);
+        int toIndex = findSingleMarker(arguments, TO_SEPARATOR, usage);
+        if (toIndex < fromIndex) {
+            throw new JakuException(usage);
         }
         String description = arguments.substring(0, fromIndex).trim();
         String from = arguments.substring(fromIndex + FROM_SEPARATOR.length(), toIndex).trim();
@@ -315,9 +355,9 @@ public class Jaku {
      * @throws JakuException if the recurring todo details are invalid
      */
     private void addRecurringTodo(String arguments) throws JakuException {
-        int fromIndex = arguments.indexOf(FROM_SEPARATOR);
-        int everyIndex = arguments.indexOf(EVERY_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
-        if (fromIndex < 0 || everyIndex < 0) {
+        int fromIndex = findSingleMarker(arguments, FROM_SEPARATOR, RECURRING_TODO_USAGE);
+        int everyIndex = findSingleMarker(arguments, EVERY_SEPARATOR, RECURRING_TODO_USAGE);
+        if (everyIndex < fromIndex) {
             throw new JakuException(RECURRING_TODO_USAGE);
         }
         String description = arguments.substring(0, fromIndex).trim();
@@ -340,10 +380,10 @@ public class Jaku {
      * @throws JakuException if the recurring event details are invalid
      */
     private void addRecurringEvent(String arguments) throws JakuException {
-        int fromIndex = arguments.indexOf(FROM_SEPARATOR);
-        int toIndex = arguments.indexOf(TO_SEPARATOR, fromIndex + FROM_SEPARATOR.length());
-        int everyIndex = arguments.indexOf(EVERY_SEPARATOR, toIndex + TO_SEPARATOR.length());
-        if (fromIndex < 0 || toIndex < 0 || everyIndex < 0) {
+        int fromIndex = findSingleMarker(arguments, FROM_SEPARATOR, RECURRING_EVENT_USAGE);
+        int toIndex = findSingleMarker(arguments, TO_SEPARATOR, RECURRING_EVENT_USAGE);
+        int everyIndex = findSingleMarker(arguments, EVERY_SEPARATOR, RECURRING_EVENT_USAGE);
+        if (toIndex < fromIndex || everyIndex < toIndex) {
             throw new JakuException(RECURRING_EVENT_USAGE);
         }
         String description = arguments.substring(0, fromIndex).trim();
@@ -372,6 +412,7 @@ public class Jaku {
      * @throws JakuException if the task list cannot be saved
      */
     private void addTask(Task task) throws JakuException {
+        ensureTaskChangesCanBeSaved();
         tasks.add(task);
         assert tasks.get(tasks.size() - 1) == task
                 : "A newly added task must be the last task in the list.";
@@ -397,6 +438,7 @@ public class Jaku {
      * @throws JakuException if the task number is invalid or outside the list
      */
     private void markTask(String input) throws JakuException {
+        ensureTaskChangesCanBeSaved();
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.MARK));
         assert taskIndex >= 0 && taskIndex < tasks.size()
                 : "A validated task number must identify an existing task.";
@@ -431,6 +473,7 @@ public class Jaku {
      * @throws JakuException if the task number is invalid or outside the list
      */
     private void unmarkTask(String input) throws JakuException {
+        ensureTaskChangesCanBeSaved();
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.UNMARK));
         assert taskIndex >= 0 && taskIndex < tasks.size()
                 : "A validated task number must identify an existing task.";
@@ -465,6 +508,7 @@ public class Jaku {
      * @throws JakuException if the task number is invalid or outside the list
      */
     private void deleteTask(String input) throws JakuException {
+        ensureTaskChangesCanBeSaved();
         int taskIndex = tasks.getIndex(Parser.parseTaskNumber(input, Command.DELETE));
         assert taskIndex >= 0 && taskIndex < tasks.size()
                 : "A validated task number must identify an existing task.";
@@ -489,6 +533,39 @@ public class Jaku {
      */
     private void saveTasks() throws JakuException {
         storage.save(tasks.asList());
+    }
+
+    /**
+     * Rejects changes when an existing task file could not be read safely.
+     *
+     * @throws JakuException if a save could overwrite unreadable saved data
+     */
+    private void ensureTaskChangesCanBeSaved() throws JakuException {
+        if (!canSaveTasks) {
+            throw new JakuException(RECOVERY_MODE_MESSAGE);
+        }
+    }
+
+    /**
+     * Locates one whitespace-delimited command parameter and rejects missing or duplicate markers.
+     *
+     * @param arguments complete command arguments
+     * @param marker parameter marker to locate
+     * @param usage message shown when the marker is invalid
+     * @return index at which the marker starts
+     * @throws JakuException if the marker is missing or appears more than once
+     */
+    private int findSingleMarker(String arguments, String marker, String usage) throws JakuException {
+        Pattern pattern = Pattern.compile("(?<!\\S)" + Pattern.quote(marker) + "(?!\\S)");
+        Matcher matcher = pattern.matcher(arguments);
+        if (!matcher.find()) {
+            throw new JakuException(usage);
+        }
+        int markerIndex = matcher.start();
+        if (matcher.find()) {
+            throw new JakuException(usage);
+        }
+        return markerIndex;
     }
 
     /**
@@ -545,5 +622,9 @@ public class Jaku {
         }
         assert task.isDone() == wasDone
                 : "Restoring a task after a failed save must recover its original completion status.";
+    }
+
+    /** Result of loading persisted tasks before a chat session begins. */
+    private record LoadedTasks(TaskList tasks, boolean canSaveTasks, String startupNotice) {
     }
 }
